@@ -51,7 +51,7 @@ public class BathroomMapFragment extends SupportMapFragment {
 
     public interface Callbacks {
         void onFetchingBathrooms(boolean fetching);
-        void onBathroomMarkerSelected(Bathroom bathroom, boolean selected);
+        void onBathroomMarkerSelected(Bathroom bathroom);
     }
 
     @Override
@@ -123,7 +123,7 @@ public class BathroomMapFragment extends SupportMapFragment {
                         Log.i(TAG, "Marker '" + marker.getTitle() + "' clicked");
                         setSelectedBathroom(bathroom);
                         centerMap(bathroom.getLatitude(), bathroom.getLongitude(), CLICKED_BATHROOM_ZOOM_LEVEL);
-                        getCallbacks().onBathroomMarkerSelected(bathroom, true);
+                        getCallbacks().onBathroomMarkerSelected(bathroom);
                         return true;
                     }
                 });
@@ -131,7 +131,10 @@ public class BathroomMapFragment extends SupportMapFragment {
                 mMap.setOnMapClickListener(new GoogleMap.OnMapClickListener() {
                     @Override
                     public void onMapClick(LatLng latLng) {
-                        clearSelectedBathroom();
+                        boolean selectionCleared = clearSelectedBathroom();
+                        if (selectionCleared) {
+                            getCallbacks().onBathroomMarkerSelected(null);
+                        }
                     }
                 });
             }
@@ -161,11 +164,14 @@ public class BathroomMapFragment extends SupportMapFragment {
         mMap.animateCamera(CameraUpdateFactory.newCameraPosition(builder.build()), CENTER_MAP_ANIMATION_DURATION, null);
     }
 
-    private void clearSelectedBathroom() {
+    private boolean clearSelectedBathroom() {
+        boolean selectionCleared = false;
         if (mSelectedMarker != null) {
             mSelectedMarker.remove();
             mSelectedMarker = null;
+            selectionCleared = true;
         }
+        return selectionCleared;
     }
 
     private void setSelectedBathroom(Bathroom bathroom) {

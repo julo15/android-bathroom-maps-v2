@@ -30,4 +30,8 @@ public class Util {
     public static LatLng createBathroomLatLng(Bathroom bathroom) {
         return new LatLng(bathroom.getLatitude(), bathroom.getLongitude());
     }
+
+    public static String coordsToString(double latitude, double longitude) {
+        return String.format("%f,%f", latitude, longitude);
+    }
 }

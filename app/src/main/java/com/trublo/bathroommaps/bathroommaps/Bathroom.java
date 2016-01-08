@@ -1,9 +1,12 @@
 package com.trublo.bathroommaps.bathroommaps;
 
+import android.os.Parcel;
+import android.os.Parcelable;
+
 /**
  * Created by julianlo on 1/6/16.
  */
-public class Bathroom {
+public class Bathroom implements Parcelable {
 
     private String mId;
     private String mName;
@@ -11,8 +14,50 @@ public class Bathroom {
     private boolean mIsPending;
     private double mLatitude;
     private double mLongitude;
-    private double mAverageRating;
-    private double mReviewCount;
+    private float mAverageRating;
+    private int mReviewCount;
+
+    public static final Parcelable.Creator<Bathroom> CREATOR = new Parcelable.Creator<Bathroom>() {
+        @Override
+        public Bathroom createFromParcel(Parcel source) {
+            Bathroom bathroom = new Bathroom();
+
+            bathroom.mId = source.readString();
+            bathroom.mName = source.readString();
+            bathroom.mCategory = source.readString();
+            boolean[] pending = new boolean[1];
+            source.readBooleanArray(pending);
+            bathroom.mIsPending = pending[0];
+            bathroom.mLatitude = source.readDouble();
+            bathroom.mLongitude = source.readDouble();
+            bathroom.mAverageRating = source.readFloat();
+            bathroom.mReviewCount = source.readInt();
+            
+            return bathroom;
+        }
+
+        @Override
+        public Bathroom[] newArray(int size) {
+            return new Bathroom[size];
+        }
+    };
+
+    @Override
+    public int describeContents() {
+        return 0;
+    }
+
+    @Override
+    public void writeToParcel(Parcel dest, int flags) {
+        dest.writeString(mId);
+        dest.writeString(mName);
+        dest.writeString(mCategory);
+        dest.writeBooleanArray(new boolean[]{mIsPending});
+        dest.writeDouble(mLatitude);
+        dest.writeDouble(mLongitude);
+        dest.writeFloat(mAverageRating);
+        dest.writeInt(mReviewCount);
+    }
 
     public String getId() {
         return mId;
@@ -62,19 +107,19 @@ public class Bathroom {
         mLongitude = longitude;
     }
 
-    public double getAverageRating() {
+    public float getAverageRating() {
         return mAverageRating;
     }
 
-    public void setAverageRating(double averageRating) {
+    public void setAverageRating(float averageRating) {
         mAverageRating = averageRating;
     }
 
-    public double getReviewCount() {
+    public int getReviewCount() {
         return mReviewCount;
     }
 
-    public void setReviewCount(double reviewCount) {
+    public void setReviewCount(int reviewCount) {
         mReviewCount = reviewCount;
     }
 }
