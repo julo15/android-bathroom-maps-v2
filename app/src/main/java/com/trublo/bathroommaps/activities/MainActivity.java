@@ -1,6 +1,7 @@
 package com.trublo.bathroommaps.activities;
 
 import android.content.Intent;
+import android.location.Location;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
@@ -24,6 +25,7 @@ public class MainActivity extends SingleFragmentActivity implements BathroomMapF
     private static final String STATE_SELECTED_BATHROOM = "selected_bathroom";
 
     private View mProgressView;
+    private View mLocateButton;
     private View mToolbarRootView;
     private TextView mToolbarNameTextView;
     private TextView mToolbarTimeTextView;
@@ -45,6 +47,15 @@ public class MainActivity extends SingleFragmentActivity implements BathroomMapF
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         mProgressView = Util.findView(this, R.id.activity_main_progress_bar);
+
+        mLocateButton = Util.findView(this, R.id.activity_main_locate_button);
+        mLocateButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                ((BathroomMapFragment)getFragment()).centerMap();
+            }
+        });
+
         mToolbarRootView = Util.findView(this, R.id.bathroom_toolbar_root_view);
         mToolbarNameTextView = Util.findView(this, R.id.bathroom_toolbar_name_text_view);
         mToolbarTimeTextView = Util.findView(this, R.id.bathroom_toolbar_time_text_view);
@@ -120,16 +131,22 @@ public class MainActivity extends SingleFragmentActivity implements BathroomMapF
 
     private void updateToolbar(Bathroom bathroom) {
         mToolbarNameTextView.setText(bathroom.getName());
-        mToolbarTimeTextView.setText(R.string.fetch_walking_time_progress_text);
 
         if (mFetchWalkingTimeTask != null) {
             mFetchWalkingTimeTask.cancel(false);
         }
 
         mFetchWalkingTimeTask = new FetchWalkingTimeTask();
-        double latitude = 47.621782;
-        double longitude = -122.331998;
-        mFetchWalkingTimeTask.execute(latitude, longitude, bathroom.getLatitude(), bathroom.getLongitude());
+        Location currentLocation = ((BathroomMapFragment)getFragment()).getCurrentLocation();
+        if (currentLocation == null) {
+            Toast.makeText(this, R.string.current_location_unavailable, Toast.LENGTH_SHORT)
+                    .show();
+            mToolbarTimeTextView.setText(R.string.unknown_walking_time);
+            return;
+        }
+
+        mToolbarTimeTextView.setText(R.string.fetch_walking_time_progress_text);
+        mFetchWalkingTimeTask.execute(currentLocation.getLatitude(), currentLocation.getLongitude(), bathroom.getLatitude(), bathroom.getLongitude());
     }
 
     private class FetchWalkingTimeTask extends AsyncTask<Double,Void,String> {

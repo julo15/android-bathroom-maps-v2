@@ -65,6 +65,12 @@ public class BathroomMapFragment extends SupportMapFragment {
                     @Override
                     public void onConnected(Bundle bundle) {
                         Log.i(TAG, "Connected to GoogleApiClient");
+
+                        if (mMap == null) {
+                            Log.w(TAG, "GoogleApiClient connected before GoogleMap is ready. Cannot center map.");
+                            return;
+                        }
+                        centerMap();
                     }
 
                     @Override
@@ -84,6 +90,9 @@ public class BathroomMapFragment extends SupportMapFragment {
                 } catch (SecurityException se) {
                     Log.w(TAG, "Could not set my location enabled", se);
                 }
+
+                mMap.getUiSettings().setMyLocationButtonEnabled(false);
+                mMap.getUiSettings().setMapToolbarEnabled(false);
 
                 mMap.setOnCameraChangeListener(new GoogleMap.OnCameraChangeListener() {
                     @Override
@@ -122,7 +131,7 @@ public class BathroomMapFragment extends SupportMapFragment {
 
                         Log.i(TAG, "Marker '" + marker.getTitle() + "' clicked");
                         setSelectedBathroom(bathroom);
-                        centerMap(bathroom.getLatitude(), bathroom.getLongitude(), CLICKED_BATHROOM_ZOOM_LEVEL);
+                        centerMap(bathroom.getLatitude(), bathroom.getLongitude());
                         getCallbacks().onBathroomMarkerSelected(bathroom);
                         return true;
                     }
@@ -153,15 +162,43 @@ public class BathroomMapFragment extends SupportMapFragment {
         mClient.disconnect();
     }
 
-    public void fetchBathrooms(double latitude, double longitude, int distance) {
-        new FetchBathroomsTask().execute(latitude, longitude, (double) distance);
+    public Location getCurrentLocation() {
+        // TODO: Check permissions
+        return LocationServices.FusedLocationApi.getLastLocation(mClient);
     }
 
-    private void centerMap(double latitude, double longitude, int zoom) {
-        CameraPosition.Builder builder = CameraPosition.builder()
-                .target(new LatLng(latitude, longitude))
-                .zoom(zoom);
-        mMap.animateCamera(CameraUpdateFactory.newCameraPosition(builder.build()), CENTER_MAP_ANIMATION_DURATION, null);
+    public void centerMap() {
+        Location location = getCurrentLocation();
+        if (location == null) {
+            Toast.makeText(getActivity(), R.string.current_location_unavailable, Toast.LENGTH_SHORT)
+                    .show();
+            return;
+        }
+        centerMap(location.getLatitude(), location.getLongitude());
+    }
+
+    private void centerMap(double latitude, double longitude) {
+        // Centre the map on the coordinates given.
+        // This method also makes a choice on whether the zoom of the camera should be adjusted.
+        // If the zoom is far enough away from 'city' level, then the zoom is restored to CLICK_BATHROOM_ZOOM_LEVEL.
+        CameraPosition.Builder builder = new CameraPosition.Builder();
+
+        builder.target(new LatLng(latitude, longitude));
+
+        CameraPosition currentCameraPosition = mMap.getCameraPosition();
+
+        if (currentCameraPosition.zoom > CLICKED_BATHROOM_ZOOM_LEVEL + 2 ||
+                currentCameraPosition.zoom < CLICKED_BATHROOM_ZOOM_LEVEL - 2) {
+            builder.zoom(CLICKED_BATHROOM_ZOOM_LEVEL);
+        } else {
+            builder.zoom(currentCameraPosition.zoom);
+        }
+
+        mMap.animateCamera(CameraUpdateFactory.newCameraPosition(builder.build()));
+    }
+
+    private void fetchBathrooms(double latitude, double longitude, int distance) {
+        new FetchBathroomsTask().execute(latitude, longitude, (double) distance);
     }
 
     private boolean clearSelectedBathroom() {

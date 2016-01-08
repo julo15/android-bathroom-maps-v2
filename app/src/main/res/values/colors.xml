@@ -4,4 +4,5 @@
     <color name="color_primary_dark">#3F241E</color>
     <color name="color_accent">#FDA563</color>
     <color name="color_red">#FF1D1D</color>
+    <color name="color_background_white">#FFFFFF</color>
 </resources>
