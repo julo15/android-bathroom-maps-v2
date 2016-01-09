@@ -3,6 +3,9 @@ package com.trublo.bathroommaps.bathroommaps;
 import android.os.Parcel;
 import android.os.Parcelable;
 
+import java.util.Arrays;
+import java.util.List;
+
 /**
  * Created by julianlo on 1/6/16.
  */
@@ -16,6 +19,7 @@ public class Bathroom implements Parcelable {
     private double mLongitude;
     private float mAverageRating;
     private int mReviewCount;
+    private List<Review> mReviews;
 
     public static final Parcelable.Creator<Bathroom> CREATOR = new Parcelable.Creator<Bathroom>() {
         @Override
@@ -32,6 +36,10 @@ public class Bathroom implements Parcelable {
             bathroom.mLongitude = source.readDouble();
             bathroom.mAverageRating = source.readFloat();
             bathroom.mReviewCount = source.readInt();
+
+            Parcelable[] parcelables = source.readParcelableArray(Review.class.getClassLoader());
+            Review[] reviews = Arrays.copyOf(parcelables, parcelables.length, Review[].class);
+            bathroom.mReviews = Arrays.asList(reviews);
             
             return bathroom;
         }
@@ -57,6 +65,7 @@ public class Bathroom implements Parcelable {
         dest.writeDouble(mLongitude);
         dest.writeFloat(mAverageRating);
         dest.writeInt(mReviewCount);
+        dest.writeParcelableArray(mReviews.toArray(new Review[mReviews.size()]), flags);
     }
 
     public String getId() {
@@ -121,5 +130,13 @@ public class Bathroom implements Parcelable {
 
     public void setReviewCount(int reviewCount) {
         mReviewCount = reviewCount;
+    }
+
+    public List<Review> getReviews() {
+        return mReviews;
+    }
+
+    public void setReviews(List<Review> reviews) {
+        mReviews = reviews;
     }
 }

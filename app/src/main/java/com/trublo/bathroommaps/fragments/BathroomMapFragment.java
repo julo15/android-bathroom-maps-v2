@@ -44,6 +44,7 @@ public class BathroomMapFragment extends SupportMapFragment {
     private HashMap<String, Bathroom> mMarkerMap = new HashMap<>(); // maps marker to bathroom
     private HashMap<String, Bathroom> mBathroomsOnMap = new HashMap<>(); // maps bathroom id to bathroom for bathrooms on the map already
     private Marker mSelectedMarker;
+    private boolean mPerformedInitialCentering;
 
     public static BathroomMapFragment newInstance() {
         return new BathroomMapFragment();
@@ -70,7 +71,16 @@ public class BathroomMapFragment extends SupportMapFragment {
                             Log.w(TAG, "GoogleApiClient connected before GoogleMap is ready. Cannot center map.");
                             return;
                         }
-                        centerMap();
+
+                        // Kind of hacky. When the fragment loads up, we want the map to centre on the user's current
+                        // location. Ideally we'd call centerMap on onMapReady, but that happens before GoogleApiClient
+                        // has connected, i.e. before we can get the user's current location.
+                        // Here we assume that the first time GoogleApiClient connects corresponds to the first time
+                        // the fragment is shown. This should generally be correct.
+                        if (!mPerformedInitialCentering) {
+                            centerMap();
+                            mPerformedInitialCentering = true;
+                        }
                     }
 
                     @Override

@@ -65,7 +65,29 @@ public class BathroomMaps {
         bathroom.setIsPending(bathroomJsonObject.getBoolean("pending"));
         bathroom.setLatitude(bathroomJsonObject.getDouble("lat"));
         bathroom.setLongitude(bathroomJsonObject.getDouble("lon"));
+
+        JSONObject ratingJsonObject = bathroomJsonObject.getJSONObject("rating");
+        bathroom.setAverageRating((float)ratingJsonObject.getDouble("avg"));
+        bathroom.setReviewCount(ratingJsonObject.getInt("count"));
+
+        List<Review> reviews = parseReviewsArray(ratingJsonObject.getJSONArray("reviews"));
+        bathroom.setReviews(reviews);
         return bathroom;
+    }
+
+    private List<Review> parseReviewsArray(JSONArray reviewsJsonArray) throws JSONException {
+        List<Review> reviews = new ArrayList<>(reviewsJsonArray.length());
+        for (int i = 0; i < reviewsJsonArray.length(); i++) {
+            reviews.add(parseReview(reviewsJsonArray.getJSONObject(i)));
+        }
+        return reviews;
+    }
+
+    private Review parseReview(JSONObject reviewJsonObject) throws JSONException {
+        Review review = new Review();
+        review.setRating(reviewJsonObject.getInt("rating"));
+        review.setText(reviewJsonObject.getString("text"));
+        return review;
     }
 
     private void throwIfResponseFailed(JSONObject responseJsonObject) throws IOException, JSONException {

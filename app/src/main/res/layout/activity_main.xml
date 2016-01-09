@@ -23,26 +23,61 @@
             android:layout_height="wrap_content"
             android:minHeight="?attr/actionBarSize"
             android:background="?attr/colorPrimary"
-            android:theme="@style/ThemeOverlay.AppCompat.Dark.ActionBar">
+            android:theme="@style/ThemeOverlay.AppCompat.Dark.ActionBar"
+            android:paddingBottom="@dimen/spacing_normal">
 
-            <LinearLayout
+            <RelativeLayout
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="vertical">
+                android:layout_height="wrap_content">
 
                 <TextView
                     android:id="@+id/bathroom_toolbar_name_text_view"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
+                    style="@style/TextAppearance.AppCompat.Title"
                     tools:text="Cascade Playground" />
 
-                <TextView
-                    android:id="@+id/bathroom_toolbar_time_text_view"
+                <FrameLayout
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    tools:text="8 mins" />
+                    android:layout_alignParentRight="true"
+                    android:layout_alignParentEnd="true"
+                    android:layout_marginTop="@dimen/time_text_view_paddingTop"
+                    android:layout_marginRight="@dimen/time_text_view_paddingRight"
+                    android:layout_marginEnd="@dimen/time_text_view_paddingRight">
 
-            </LinearLayout>
+                    <TextView
+                        android:id="@+id/bathroom_toolbar_time_text_view"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:freezesText="true"
+                        tools:text="8 mins" />
+
+                    <ProgressBar
+                        android:id="@+id/bathroom_toolbar_time_progress_bar"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:visibility="gone"
+                        style="?android:attr/android:progressBarStyleSmall" />
+
+                </FrameLayout>
+
+                <RatingBar
+                    android:id="@+id/bathroom_toolbar_rating_bar"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_below="@id/bathroom_toolbar_name_text_view"
+                    style="?android:attr/ratingBarStyleSmall"
+                    android:isIndicator="true"
+                    android:numStars="5" />
+
+                <TextView
+                    android:id="@+id/bathroom_toolbar_review_count"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_below="@id/bathroom_toolbar_rating_bar" />
+
+            </RelativeLayout>
 
         </android.support.v7.widget.Toolbar>
 

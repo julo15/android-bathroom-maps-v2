@@ -10,6 +10,8 @@ import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.widget.ProgressBar;
+import android.widget.RatingBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -29,7 +31,10 @@ public class MainActivity extends SingleFragmentActivity implements BathroomMapF
     private View mToolbarRootView;
     private TextView mToolbarNameTextView;
     private TextView mToolbarTimeTextView;
+    private ProgressBar mToolbarTimeProgressBar;
     private View mToolbarDirectionsButton;
+    private RatingBar mToolbarRatingBar;
+    private TextView mToolbarReviewCountTextView;
     private Bathroom mSelectedBathroom;
     private FetchWalkingTimeTask mFetchWalkingTimeTask;
 
@@ -77,9 +82,18 @@ public class MainActivity extends SingleFragmentActivity implements BathroomMapF
             }
         });
 
+        mToolbarTimeProgressBar = Util.findView(this, R.id.bathroom_toolbar_time_progress_bar);
+        mToolbarRatingBar = Util.findView(this, R.id.bathroom_toolbar_rating_bar);
+        mToolbarReviewCountTextView = Util.findView(this, R.id.bathroom_toolbar_review_count);
+
         if ((savedInstanceState != null) && savedInstanceState.containsKey(STATE_SELECTED_BATHROOM)) {
             mSelectedBathroom = Util.cast(savedInstanceState.getParcelable(STATE_SELECTED_BATHROOM));
-            updateToolbar(mSelectedBathroom);
+
+            // If we're restoring from instance state, then we rely on the textview already containing
+            // the walking time (via freezesText), so don't call into GoogleMaps again to find out.
+            // This avoids a problem where BathroomMapFragment.getCurrentLocation returns null since
+            // the GoogleApiClient is not connected yet.
+            updateToolbar(mSelectedBathroom, false);
             Util.showView(mToolbarRootView, true);
         }
     }
@@ -121,7 +135,7 @@ public class MainActivity extends SingleFragmentActivity implements BathroomMapF
 
         if (bathroom != null) {
             Log.v(TAG, "Received bathroom clicked: " + bathroom.getName());
-            updateToolbar(bathroom);
+            updateToolbar(bathroom, true);
         } else {
             Log.v(TAG, "Received bathroom unclicked");
         }
@@ -129,28 +143,40 @@ public class MainActivity extends SingleFragmentActivity implements BathroomMapF
         Util.showView(mToolbarRootView, (bathroom != null));
     }
 
-    private void updateToolbar(Bathroom bathroom) {
+    private void updateToolbar(Bathroom bathroom, boolean updateTime) {
         mToolbarNameTextView.setText(bathroom.getName());
+
+        int reviews = bathroom.getReviewCount();
+        mToolbarRatingBar.setRating(bathroom.getAverageRating());
+        Util.showView(mToolbarRatingBar, reviews > 0);
+        mToolbarReviewCountTextView.setText(getResources().getQuantityString(R.plurals.review_count, reviews, reviews));
 
         if (mFetchWalkingTimeTask != null) {
             mFetchWalkingTimeTask.cancel(false);
         }
 
-        mFetchWalkingTimeTask = new FetchWalkingTimeTask();
-        Location currentLocation = ((BathroomMapFragment)getFragment()).getCurrentLocation();
-        if (currentLocation == null) {
-            Toast.makeText(this, R.string.current_location_unavailable, Toast.LENGTH_SHORT)
-                    .show();
-            mToolbarTimeTextView.setText(R.string.unknown_walking_time);
-            return;
-        }
+        if (updateTime) {
+            mFetchWalkingTimeTask = new FetchWalkingTimeTask();
+            Location currentLocation = ((BathroomMapFragment) getFragment()).getCurrentLocation();
+            if (currentLocation == null) {
+                Toast.makeText(this, R.string.current_location_unavailable, Toast.LENGTH_SHORT)
+                        .show();
+                mToolbarTimeTextView.setText(R.string.unknown_walking_time);
+                return;
+            }
 
-        mToolbarTimeTextView.setText(R.string.fetch_walking_time_progress_text);
-        mFetchWalkingTimeTask.execute(currentLocation.getLatitude(), currentLocation.getLongitude(), bathroom.getLatitude(), bathroom.getLongitude());
+            mFetchWalkingTimeTask.execute(currentLocation.getLatitude(), currentLocation.getLongitude(), bathroom.getLatitude(), bathroom.getLongitude());
+        }
     }
 
     private class FetchWalkingTimeTask extends AsyncTask<Double,Void,String> {
         private Exception mException;
+
+        @Override
+        protected void onPreExecute() {
+            Util.showView(mToolbarTimeTextView, false);
+            Util.showView(mToolbarTimeProgressBar, true);
+        }
 
         @Override
         protected String doInBackground(Double... params) {
@@ -176,6 +202,9 @@ public class MainActivity extends SingleFragmentActivity implements BathroomMapF
             else {
                 mToolbarTimeTextView.setText(text);
             }
+
+            Util.showView(mToolbarTimeTextView, true);
+            Util.showView(mToolbarTimeProgressBar, false);
         }
     }
 }
