@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:layout_margin="@dimen/spacing_normal">
+
+    <RatingBar
+        android:id="@+id/review_item_rating_bar"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        style="?android:attr/ratingBarStyleSmall"
+        android:isIndicator="true"
+        android:numStars="5" />
+
+    <TextView
+        android:id="@+id/review_item_date_text_view"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentRight="true"
+        android:layout_alignParentEnd="true"
+        tools:text="1 day ago"/>
+
+    <TextView
+        android:id="@+id/review_item_text_text_view"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/review_item_rating_bar"
+        android:layout_marginTop="@dimen/spacing_normal"
+        tools:text="Been here a handful of times since they\'ve opened (work nearby) and every time I go in, the dudes behind the counter are always super friendly and happy to tell you what\'s what."/>
+
+</RelativeLayout>

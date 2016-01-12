@@ -9,6 +9,11 @@
     <string name="unknown_walking_time">Press the walk button for walking time</string>
     <string name="cant_launch_maps">We want to launch Google Maps for navigation, but it doesn\'t appear to be installed on your device.</string>
     <string name="current_location_unavailable">Your location is currently not available...</string>
+    <string name="add_review_button">Write a review!</string>
+    <string name="review_email_hint">Your email</string>
+    <string name="review_text_hint">Write your review!</string>
+    <string name="send_review_button">Send your review</string>
+    <string name="send_review_succeeded">Your review has been sent!</string>
 
     <plurals name="review_count">
         <item quantity="one">%d review</item>

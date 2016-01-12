@@ -6,6 +6,9 @@ import com.squareup.okhttp.OkHttpClient;
 import com.squareup.okhttp.Request;
 import com.squareup.okhttp.Response;
 
+import org.joda.time.DateTime;
+import org.joda.time.format.DateTimeFormatter;
+import org.joda.time.format.ISODateTimeFormat;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -87,7 +90,34 @@ public class BathroomMaps {
         Review review = new Review();
         review.setRating(reviewJsonObject.getInt("rating"));
         review.setText(reviewJsonObject.getString("text"));
+        //review.setDateCreated(ISODateTimeFormat.dateTimeParser().parseDateTime(reviewJsonObject.getString("date")));
+
+        String dateText = reviewJsonObject.getString("date");
+        DateTimeFormatter formatter = ISODateTimeFormat.dateTime();
+        DateTime dateTime = formatter.parseDateTime(dateText);
+        review.setDateCreated(dateTime);
         return review;
+    }
+
+    public void submitReview(String bathroomId, int rating, String text) throws IOException, JSONException {
+        String url = ENDPOINT
+                .buildUpon()
+                .appendPath("addreview")
+                .appendQueryParameter("id", bathroomId)
+                .appendQueryParameter("rating", String.valueOf(rating))
+                .appendQueryParameter("text", text)
+                .build()
+                .toString();
+        Request request = new Request.Builder()
+                .url(url)
+                .build();
+        Response response = mHttpClient.newCall(request).execute();
+        if (!response.isSuccessful()) {
+            throw new IOException("HTTP failure response in submitReview: " + response.code());
+        }
+
+        JSONObject responseJsonObject = new JSONObject(response.body().string());
+        throwIfResponseFailed(responseJsonObject);
     }
 
     private void throwIfResponseFailed(JSONObject responseJsonObject) throws IOException, JSONException {

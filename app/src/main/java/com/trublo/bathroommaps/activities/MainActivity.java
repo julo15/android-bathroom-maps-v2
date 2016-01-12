@@ -86,6 +86,16 @@ public class MainActivity extends SingleFragmentActivity implements BathroomMapF
         mToolbarRatingBar = Util.findView(this, R.id.bathroom_toolbar_rating_bar);
         mToolbarReviewCountTextView = Util.findView(this, R.id.bathroom_toolbar_review_count);
 
+        View.OnClickListener launchReviewListClickListener = new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Intent intent = ReviewListActivity.newIntent(MainActivity.this, mSelectedBathroom);
+                startActivity(intent);
+            }
+        };
+
+        mToolbarReviewCountTextView.setOnClickListener(launchReviewListClickListener);
+
         if ((savedInstanceState != null) && savedInstanceState.containsKey(STATE_SELECTED_BATHROOM)) {
             mSelectedBathroom = Util.cast(savedInstanceState.getParcelable(STATE_SELECTED_BATHROOM));
 

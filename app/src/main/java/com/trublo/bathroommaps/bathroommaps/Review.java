@@ -3,7 +3,7 @@ package com.trublo.bathroommaps.bathroommaps;
 import android.os.Parcel;
 import android.os.Parcelable;
 
-import java.util.Date;
+import org.joda.time.DateTime;
 
 /**
  * Created by julianlo on 1/8/16.
@@ -11,7 +11,7 @@ import java.util.Date;
 public class Review implements Parcelable {
     private int mRating;
     private String mText;
-    private Date mDateCreated;
+    private DateTime mDateCreated;
 
     public static final Parcelable.Creator<Review> CREATOR = new Parcelable.Creator<Review>() {
         @Override
@@ -19,6 +19,7 @@ public class Review implements Parcelable {
             Review review = new Review();
             review.setRating(source.readInt());
             review.setText(source.readString());
+            review.setDateCreated((DateTime)source.readSerializable());
             return review;
         }
 
@@ -37,6 +38,7 @@ public class Review implements Parcelable {
     public void writeToParcel(Parcel dest, int flags) {
         dest.writeInt(getRating());
         dest.writeString(getText());
+        dest.writeSerializable(getDateCreated());
     }
 
     public int getRating() {
@@ -55,11 +57,11 @@ public class Review implements Parcelable {
         mText = text;
     }
 
-    public Date getDateCreated() {
+    public DateTime getDateCreated() {
         return mDateCreated;
     }
 
-    public void setDateCreated(Date dateCreated) {
+    public void setDateCreated(DateTime dateCreated) {
         mDateCreated = dateCreated;
     }
 }
