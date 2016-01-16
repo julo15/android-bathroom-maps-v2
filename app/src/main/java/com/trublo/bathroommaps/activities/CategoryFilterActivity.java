@@ -2,38 +2,45 @@ package com.trublo.bathroommaps.activities;
 
 import android.content.Context;
 import android.content.Intent;
+import android.os.Parcelable;
 import android.support.v4.app.Fragment;
 
+import com.trublo.bathroommaps.GoogleMapCategorizer;
+import com.trublo.bathroommaps.Util;
 import com.trublo.bathroommaps.fragments.CategoryFilterFragment;
 
-import java.util.Map;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Created by julianlo on 1/15/16.
  */
 public class CategoryFilterActivity extends SingleFragmentActivity {
 
-    private static final String EXTRA_CATEGORY_NAMES = "com.julo.android.bathroommaps.category_names";
-    private static final String EXTRA_CATEGORY_VISIBILITIES = "com.julo.android.bathroommaps.category_visibilities";
+    private static final String EXTRA_CATEGORY_FILTER_ITEMS = "com.trublo.bathroommaps.category_filter_items";
 
-    public static Intent newIntent(Context context, Map<String, Boolean> categoryVisibilityMap) {
+    public static Intent newIntent(Context context, List<GoogleMapCategorizer.CategoryInfo<String>> categories) {
         Intent intent = new Intent(context, CategoryFilterActivity.class);
-        int size = categoryVisibilityMap.size();
 
-        String[] names = categoryVisibilityMap.keySet().toArray(new String[size]);
-        intent.putExtra(EXTRA_CATEGORY_NAMES, names);
+        int size = categories.size();
+        ArrayList<CategoryFilterFragment.CategoryFilterItem> items = new ArrayList<>(size);
+        for (GoogleMapCategorizer.CategoryInfo<String> categoryInfo : categories) {
+            CategoryFilterFragment.CategoryFilterItem item = new CategoryFilterFragment.CategoryFilterItem();
+            item.setCategoryId(categoryInfo.getId());
+            item.setIsVisible(categoryInfo.isVisible());
+            items.add(item);
+        }
 
-        Boolean[] visibilities = categoryVisibilityMap.values().toArray(new Boolean[size]);
-        intent.putExtra(EXTRA_CATEGORY_VISIBILITIES, visibilities);
-
+        intent.putExtra(EXTRA_CATEGORY_FILTER_ITEMS, items);
         return intent;
     }
 
     @Override
     protected Fragment createFragment() {
-        String[] names = getIntent().getStringArrayExtra(EXTRA_CATEGORY_NAMES);
-        Boolean[] visibilities = (Boolean[])getIntent().getSerializableExtra(EXTRA_CATEGORY_VISIBILITIES);
+        ArrayList<Parcelable> parcelables = getIntent()
+                .getParcelableArrayListExtra(EXTRA_CATEGORY_FILTER_ITEMS);
+        ArrayList<CategoryFilterFragment.CategoryFilterItem> categoryFilterItems = Util.cast(parcelables);
 
-        return CategoryFilterFragment.newInstance(names, visibilities);
+        return CategoryFilterFragment.newInstance(categoryFilterItems);
     }
 }

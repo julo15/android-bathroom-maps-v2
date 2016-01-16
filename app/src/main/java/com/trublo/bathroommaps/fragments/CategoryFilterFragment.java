@@ -3,11 +3,12 @@ package com.trublo.bathroommaps.fragments;
 import android.app.Activity;
 import android.content.Intent;
 import android.os.Bundle;
+import android.os.Parcel;
+import android.os.Parcelable;
 import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
-import android.util.Pair;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -19,27 +20,73 @@ import com.trublo.bathroommaps.R;
 import com.trublo.bathroommaps.Util;
 
 import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
+import java.util.Iterator;
 
 /**
  * Created by julianlo on 1/15/16.
  */
 public class CategoryFilterFragment extends Fragment {
 
-    private static final String ARG_CATEGORY_NAMES = "category_names";
-    private static final String ARG_CATEGORY_VISIBILITIES = "category_visibilities";
-
-    public static final String EXTRA_CATEGORY_NAMES = "com.trublo.bathroommaps.category_names";
-    public static final String EXTRA_CATEGORY_VISIBILITIES = "com.trublo.bathrooms.category_visibilities";
+    private static final String ARG_CATEGORY_FILTER_ITEMS = "category_filter_items";
+    public static final String EXTRA_CATEGORY_FILTER_ITEMS = "com.trublo.bathroommaps.category_filter_items";
 
     private RecyclerView mRecyclerView;
 
-    public static CategoryFilterFragment newInstance(String[] categoryNames, Boolean[] categoryVisibilities) {
-        Bundle args = new Bundle();
+    public static class CategoryFilterItem implements Parcelable {
+        private String mCategoryId;
+        private boolean mIsVisible;
 
-        args.putStringArray(ARG_CATEGORY_NAMES, categoryNames);
-        args.putSerializable(ARG_CATEGORY_VISIBILITIES, categoryVisibilities);
+        public static final Parcelable.Creator<CategoryFilterItem> CREATOR = new Parcelable.Creator<CategoryFilterItem>() {
+            @Override
+            public CategoryFilterItem createFromParcel(Parcel source) {
+                CategoryFilterItem item = new CategoryFilterItem();
+
+                item.mCategoryId = source.readString();
+                boolean[] visible = new boolean[1];
+                source.readBooleanArray(visible);
+                item.mIsVisible = visible[0];
+
+                return item;
+            }
+
+            @Override
+            public CategoryFilterItem[] newArray(int size) {
+                return new CategoryFilterItem[size];
+            }
+        };
+
+        @Override
+        public int describeContents() {
+            return 0;
+        }
+
+        @Override
+        public void writeToParcel(Parcel dest, int flags) {
+            dest.writeString(mCategoryId);
+            boolean[] visible = new boolean[] { mIsVisible };
+            dest.writeBooleanArray(visible);
+        }
+
+        public String getCategoryId() {
+            return mCategoryId;
+        }
+
+        public void setCategoryId(String categoryId) {
+            mCategoryId = categoryId;
+        }
+
+        public boolean isVisible() {
+            return mIsVisible;
+        }
+
+        public void setIsVisible(boolean isVisible) {
+            mIsVisible = isVisible;
+        }
+    }
+
+    public static CategoryFilterFragment newInstance(ArrayList<CategoryFilterItem> categoryFilterItems) {
+        Bundle args = new Bundle();
+        args.putParcelableArrayList(ARG_CATEGORY_FILTER_ITEMS, categoryFilterItems);
 
         CategoryFilterFragment fragment = new CategoryFilterFragment();
         fragment.setArguments(args);
@@ -54,40 +101,34 @@ public class CategoryFilterFragment extends Fragment {
         mRecyclerView = Util.findView(view, R.id.fragment_category_filter_recycler_view);
         mRecyclerView.setLayoutManager(new LinearLayoutManager(getActivity()));
 
-        String[] names = getArguments().getStringArray(ARG_CATEGORY_NAMES);
-        Boolean[] visibilities = (Boolean[])getArguments().getSerializable(ARG_CATEGORY_VISIBILITIES);
-        setupAdapter(names, visibilities);
+        ArrayList<Parcelable> parcelables = getArguments().getParcelableArrayList(ARG_CATEGORY_FILTER_ITEMS);
+        ArrayList<CategoryFilterItem> categoryFilterItems = Util.cast(parcelables);
+
+        // BathroomMapFragment adds a null category marker for the selected marker.
+        // Find it and remove it so that we don't have a null category showing in the filter list.
+        for (Iterator<CategoryFilterItem> iterator = categoryFilterItems.iterator(); iterator.hasNext();) {
+            CategoryFilterItem item = iterator.next();
+            if (item.getCategoryId() == null) {
+                iterator.remove();
+                break;
+            }
+        }
+
+        setupAdapter(categoryFilterItems);
 
         return view;
     }
 
-
-
-    private void setupAdapter(String[] names, Boolean[] visibilities) {
-        List<Pair<String, Boolean>> categories = new ArrayList<>(names.length);
-        for (int i = 0; i < names.length; i++) {
-            if (names[i] != null) {
-                categories.add(new Pair<>(names[i], visibilities[i]));
-            }
-        }
-        mRecyclerView.setAdapter(new CategoryAdapter(categories));
+    private void setupAdapter(ArrayList<CategoryFilterItem> categoryFilterItems) {
+        mRecyclerView.setAdapter(new CategoryAdapter(categoryFilterItems));
     }
 
     private void sendResult() {
         CategoryAdapter adapter = Util.cast(mRecyclerView.getAdapter());
-        String[] names = new String[adapter.mCategories.size()];
-        Boolean[] visibilities = new Boolean[adapter.mCategories.size()];
-
-        for (int i = 0; i < adapter.mCategories.size(); i++) {
-            Pair<String, Boolean> pair = adapter.mCategories.get(i);
-            names[i] = pair.first;
-            visibilities[i] = pair.second;
-        }
 
         int resultCode = Activity.RESULT_OK;
         Intent data = new Intent();
-        data.putExtra(EXTRA_CATEGORY_NAMES, names);
-        data.putExtra(EXTRA_CATEGORY_VISIBILITIES, visibilities);
+        data.putExtra(EXTRA_CATEGORY_FILTER_ITEMS, adapter.mCategories);
 
         Fragment targetFragment = getTargetFragment();
         if (targetFragment != null) {
@@ -98,7 +139,7 @@ public class CategoryFilterFragment extends Fragment {
     }
 
     private class CategoryHolder extends RecyclerView.ViewHolder {
-        private Pair<String, Boolean> mCategory;
+        private CategoryFilterItem mCategory;
         private TextView mTextView;
         private ToggleButton mToggleButton;
 
@@ -109,34 +150,28 @@ public class CategoryFilterFragment extends Fragment {
             mToggleButton.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
                 @Override
                 public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
-                    // Pair<> is immutable, so we need to remove the old pair and add a new one
-                    // to the List that is backing the adapter (which is *the* list).
                     // Ideally, we'd wait to set the result until the fragment goes away, but I'm
                     // not aware of a good hook point that would work there. (onPause doesn't work.)
                     // So we actively set the result every time a toggle changes.
-                    CategoryAdapter adapter = Util.cast(mRecyclerView.getAdapter());
-                    int index = adapter.mCategories.indexOf(mCategory);
-                    adapter.mCategories.remove(index);
-                    Pair<String, Boolean> category = new Pair<>(mCategory.first, isChecked);
-                    adapter.mCategories.add(index, category);
-                    mCategory = category;
+                    mCategory.setIsVisible(isChecked);
                     sendResult();
                 }
             });
         }
 
-        public void bindCategory(Pair<String, Boolean> category) {
+        public void bindCategory(CategoryFilterItem category) {
             mCategory = category;
-            mTextView.setText(category.first);
-            mToggleButton.setChecked(category.second);
+            mTextView.setText(category.getCategoryId());
+            mToggleButton.setChecked(category.isVisible());
         }
     }
 
     private class CategoryAdapter extends RecyclerView.Adapter<CategoryHolder> {
-        private List<Pair<String, Boolean>> mCategories;
+        // Use ArrayList explicitly so that we can easily pop it back into intent extras
+        private ArrayList<CategoryFilterItem> mCategories;
 
-        public CategoryAdapter(List<Pair<String, Boolean>> categories) {
-            mCategories = categories;
+        public CategoryAdapter(ArrayList<CategoryFilterItem> categoryFilterItems) {
+            mCategories = categoryFilterItems;
         }
 
         @Override

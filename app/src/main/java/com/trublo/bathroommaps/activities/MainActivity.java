@@ -5,6 +5,7 @@ import android.location.Location;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.os.Parcelable;
 import android.support.v4.app.Fragment;
 import android.util.Log;
 import android.view.Menu;
@@ -24,6 +25,8 @@ import com.trublo.bathroommaps.fragments.ReviewListFragment;
 import com.trublo.bathroommaps.googlemaps.GoogleMaps;
 
 import java.util.Iterator;
+import java.util.List;
+import java.util.ListIterator;
 import java.util.Map;
 
 public class MainActivity extends SingleFragmentActivity implements BathroomMapFragment.Callbacks {
@@ -73,7 +76,7 @@ public class MainActivity extends SingleFragmentActivity implements BathroomMapF
         mFilterButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Intent intent = CategoryFilterActivity.newIntent(MainActivity.this, getMapFragment().getCategoryVisibilityMap());
+                Intent intent = CategoryFilterActivity.newIntent(MainActivity.this, getMapFragment().getCategories());
                 startActivityForResult(intent, REQUEST_FILTER_CATEGORIES);
             }
         });
@@ -165,12 +168,12 @@ public class MainActivity extends SingleFragmentActivity implements BathroomMapF
             mSelectedBathroom = updatedBathroom;
             updateToolbar(mSelectedBathroom, false);
         } else if (requestCode == REQUEST_FILTER_CATEGORIES) {
-            Map<String, Boolean> categoryVisibilities = Util.createMapFromArrays(
-                    data.getStringArrayExtra(CategoryFilterFragment.EXTRA_CATEGORY_NAMES),
-                    (Boolean[])data.getSerializableExtra(CategoryFilterFragment.EXTRA_CATEGORY_VISIBILITIES));
-            for (Iterator<Map.Entry<String, Boolean>> iterator = categoryVisibilities.entrySet().iterator(); iterator.hasNext();) {
-                Map.Entry<String, Boolean> entry = iterator.next();
-                getMapFragment().showCategory(entry.getKey(), entry.getValue());
+            BathroomMapFragment bathroomMapFragment = getMapFragment();
+            List<Parcelable> parcelables = data.getParcelableArrayListExtra(CategoryFilterFragment.EXTRA_CATEGORY_FILTER_ITEMS);
+            List<CategoryFilterFragment.CategoryFilterItem> categoryFilterItems = Util.cast(parcelables);
+            for (Iterator<CategoryFilterFragment.CategoryFilterItem> iterator = categoryFilterItems.iterator(); iterator.hasNext();) {
+                CategoryFilterFragment.CategoryFilterItem item = iterator.next();
+                bathroomMapFragment.showCategory(item.getCategoryId(), item.isVisible());
             }
         }
     }

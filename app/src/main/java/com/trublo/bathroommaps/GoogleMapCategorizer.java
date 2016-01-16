@@ -8,8 +8,10 @@ import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -28,47 +30,121 @@ public class GoogleMapCategorizer<T> {
     };
 
     private GoogleMap mMap;
-    private HashMap<T, Set<Marker>> mCategoryMap = new HashMap<>();          // primary category container
-    private HashMap<Marker, T> mMarkerCategoryMap = new HashMap<>();         // used only to support removeMarker
-    private HashMap<T, BitmapDescriptor> mCategoryIconMap = new HashMap<>(); // populated on-demand
-    private HashMap<T, Boolean> mCategoryVisibilityMap = new HashMap<>();    // populated on category creation
+    private HashMap<T, CategoryInfo<T>> mCategoryInfoMap = new HashMap<>();
+    private List<CategoryInfo<T>> mCategoryInfoList = new ArrayList<>();     // needed only to support ordering
+    private HashMap<Marker, T> mMarkerCategoryMap = new HashMap<>();         // needed only to support removeMarker
     private int mNextIconIndex;
 
+    public static class CategoryDescriptor<T> {
+        T mId;
+        BitmapDescriptor mIcon;
+
+        public T getId() {
+            return mId;
+        }
+
+        public CategoryDescriptor<T> setId(T id) {
+            mId = id;
+            return this;
+        }
+
+        public BitmapDescriptor getIcon() {
+            return mIcon;
+        }
+
+        public CategoryDescriptor<T> setIcon(BitmapDescriptor icon) {
+            mIcon = icon;
+            return this;
+        }
+    }
+
+    public static class CategoryInfo<T> {
+        T mId;
+        Set<Marker> mMarkers = new HashSet<>();
+        BitmapDescriptor mIcon;
+        boolean mIsVisible = true;
+
+        private CategoryInfo(T id) {
+            mId = id;
+        }
+
+        public T getId() {
+            return mId;
+        }
+
+        private Set<Marker> getMarkers() {
+            return mMarkers;
+        }
+
+        public BitmapDescriptor getIcon() {
+            return mIcon;
+        }
+
+        private void setIcon(BitmapDescriptor icon) {
+            mIcon = icon;
+        }
+
+        public boolean isVisible() {
+            return mIsVisible;
+        }
+
+        private void setIsVisible(boolean isVisible) {
+            mIsVisible = isVisible;
+        }
+    }
+
     public GoogleMapCategorizer(GoogleMap map) {
+        this(map, null);
+    }
+
+    public GoogleMapCategorizer(GoogleMap map, CategoryDescriptor<T>[] categoryDescriptors) {
         mMap = map;
+
+        if (categoryDescriptors != null) {
+            for (CategoryDescriptor<T> descriptor : categoryDescriptors) {
+                CategoryInfo<T> categoryInfo = new CategoryInfo<>(descriptor.getId());
+                categoryInfo.setIcon(descriptor.getIcon());
+                addCategory(categoryInfo);
+            }
+        }
     }
 
     public GoogleMap getMap() {
         return mMap;
     }
 
+    private void addCategory(CategoryInfo<T> categoryInfo) {
+        mCategoryInfoMap.put(categoryInfo.getId(), categoryInfo);
+        mCategoryInfoList.add(categoryInfo);
+    }
+
     public Marker addMarker(MarkerOptions options, T category) {
         // Ensure the category has its set of markers initialized
         // And ensure the category has its visibility initialized
-        if (!mCategoryMap.containsKey(category)) {
-            mCategoryMap.put(category, new HashSet<Marker>());
-            mCategoryVisibilityMap.put(category, Boolean.TRUE);
+        if (!mCategoryInfoMap.containsKey(category)) {
+            addCategory(new CategoryInfo<T>(category));
         }
+
+        CategoryInfo<T> categoryInfo = mCategoryInfoMap.get(category);
 
         // Set the marker icon
         if (options.getIcon() == null) {
             // Ensure the category has an icon, then set it on the marker
-            if (!mCategoryIconMap.containsKey(category)) {
-                mCategoryIconMap.put(category, retrieveIconForNewCategory(category));
+            if (categoryInfo.getIcon() == null) {
+                categoryInfo.setIcon(retrieveIconForNewCategory(category));
             }
-            options.icon(mCategoryIconMap.get(category));
+            options.icon(categoryInfo.getIcon());
         } else {
             Log.i(TAG, "Icon already set on new marker. Will use that icon instead of category icon.");
         }
 
         // Set the marker visibility
-        options.visible(mCategoryVisibilityMap.get(category));
+        options.visible(categoryInfo.isVisible());
 
         // Add the marker
         Marker marker = mMap.addMarker(options);
         mMarkerCategoryMap.put(marker, category);
-        Set<Marker> markers = mCategoryMap.get(category);
-        markers.add(marker);
+        categoryInfo.getMarkers().add(marker);
 
         return marker;
     }
@@ -76,43 +152,38 @@ public class GoogleMapCategorizer<T> {
     public void removeMarker(Marker marker) {
         marker.remove();
         if (!mMarkerCategoryMap.containsKey(marker)) {
-            // This is expected if the marker is uncategorized (null category)
-            Log.i(TAG, "Could not find marker's category in remove");
+            Log.w(TAG, "Could not find marker's category in remove");
             return;
         }
 
         T category = mMarkerCategoryMap.get(marker);
-        Set<Marker> markers = mCategoryMap.get(category);
-        if (markers == null) {
-            throw new IllegalStateException("Could not find markers for category " + category + " in remove");
+        CategoryInfo<T> categoryInfo = mCategoryInfoMap.get(category);
+        if (categoryInfo == null) {
+            throw new IllegalStateException("Could not find category info for category " + category + " in remove");
         }
 
-        if (!markers.remove(marker)) {
+        if (!categoryInfo.getMarkers().remove(marker)) {
             Log.w(TAG, "Marker was not present in its category set in remove");
         }
     }
 
-    public Set<T> getCategories() {
-        return mCategoryMap.keySet();
-    }
-
-    public Map<T, Boolean> getCategoryVisibilityMap() {
-        return mCategoryVisibilityMap;
+    public List<CategoryInfo<T>> getCategories() {
+        return mCategoryInfoList;
     }
 
     public void showCategory(T category, boolean show) {
-        Set<Marker> markers = mCategoryMap.get(category);
-        if (markers == null) {
-            Log.w(TAG, "Could not find map category " + category.toString());
+        CategoryInfo<T> categoryInfo = mCategoryInfoMap.get(category);
+        if (categoryInfo == null) {
+            Log.w(TAG, "Could not find categoryinfo for category " + category.toString());
             return;
         }
 
-        Boolean visible = mCategoryVisibilityMap.get(category);
+        boolean visible = categoryInfo.isVisible();
         if (visible != show) {
-            for (Marker marker : markers) {
+            for (Marker marker : categoryInfo.getMarkers()) {
                 marker.setVisible(show);
             }
-            mCategoryVisibilityMap.put(category, show);
+            categoryInfo.setIsVisible(show);
         }
     }
 

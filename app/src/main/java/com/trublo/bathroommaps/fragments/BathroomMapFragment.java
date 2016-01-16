@@ -32,7 +32,6 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 /**
  * Created by julianlo on 1/6/16.
@@ -41,6 +40,13 @@ public class BathroomMapFragment extends SupportMapFragment {
     private static final String TAG = "BathroomMapFragment";
 
     private static final int CLICKED_BATHROOM_ZOOM_LEVEL = 16;
+
+    private static final GoogleMapCategorizer.CategoryDescriptor<String>[] DEFAULT_CATEGORIES = new GoogleMapCategorizer.CategoryDescriptor[] {
+            new GoogleMapCategorizer.CategoryDescriptor<String>()
+                .setId("Public"),
+            new GoogleMapCategorizer.CategoryDescriptor<String>()
+                .setId("Coffee Shop")
+    };
 
     private GoogleApiClient mClient;
     private GoogleMapCategorizer<String> mMap;
@@ -96,7 +102,7 @@ public class BathroomMapFragment extends SupportMapFragment {
         getMapAsync(new OnMapReadyCallback() {
             @Override
             public void onMapReady(GoogleMap googleMap) {
-                mMap = new GoogleMapCategorizer(googleMap);
+                mMap = new GoogleMapCategorizer<>(googleMap, DEFAULT_CATEGORIES);
 
                 try {
                     mMap.getMap().setMyLocationEnabled(true);
@@ -228,8 +234,8 @@ public class BathroomMapFragment extends SupportMapFragment {
         mBathroomsOnMap.put(updatedBathroom.getId(), updatedBathroom);
     }
 
-    public Map<String, Boolean> getCategoryVisibilityMap() {
-        return mMap.getCategoryVisibilityMap();
+    public List<GoogleMapCategorizer.CategoryInfo<String>> getCategories() {
+        return mMap.getCategories();
     }
 
     public void showCategory(String category, boolean show) {
