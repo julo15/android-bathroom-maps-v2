@@ -19,6 +19,7 @@ import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.LatLngBounds;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
+import com.trublo.bathroommaps.GoogleMapCategorizer;
 import com.trublo.bathroommaps.R;
 import com.trublo.bathroommaps.Util;
 import com.trublo.bathroommaps.bathroommaps.Bathroom;
@@ -40,8 +41,15 @@ public class BathroomMapFragment extends SupportMapFragment {
 
     private static final int CLICKED_BATHROOM_ZOOM_LEVEL = 16;
 
+    private static final GoogleMapCategorizer.CategoryDescriptor<String>[] DEFAULT_CATEGORIES = new GoogleMapCategorizer.CategoryDescriptor[] {
+            new GoogleMapCategorizer.CategoryDescriptor<String>()
+                .setId("Public"),
+            new GoogleMapCategorizer.CategoryDescriptor<String>()
+                .setId("Coffee Shop")
+    };
+
     private GoogleApiClient mClient;
-    private GoogleMap mMap;
+    private GoogleMapCategorizer<String> mMap;
     private HashMap<String, Bathroom> mMarkerMap = new HashMap<>(); // maps marker to bathroom
     private HashMap<String, Bathroom> mBathroomsOnMap = new HashMap<>(); // maps bathroom id to bathroom for bathrooms on the map already
     private Marker mSelectedMarker;
@@ -94,24 +102,24 @@ public class BathroomMapFragment extends SupportMapFragment {
         getMapAsync(new OnMapReadyCallback() {
             @Override
             public void onMapReady(GoogleMap googleMap) {
-                mMap = googleMap;
+                mMap = new GoogleMapCategorizer<>(googleMap, DEFAULT_CATEGORIES);
 
                 try {
-                    mMap.setMyLocationEnabled(true);
+                    mMap.getMap().setMyLocationEnabled(true);
                 } catch (SecurityException se) {
                     Log.w(TAG, "Could not set my location enabled", se);
                 }
 
-                mMap.getUiSettings().setMyLocationButtonEnabled(false);
-                mMap.getUiSettings().setMapToolbarEnabled(false);
+                mMap.getMap().getUiSettings().setMyLocationButtonEnabled(false);
+                mMap.getMap().getUiSettings().setMapToolbarEnabled(false);
 
-                mMap.setOnCameraChangeListener(new GoogleMap.OnCameraChangeListener() {
+                mMap.getMap().setOnCameraChangeListener(new GoogleMap.OnCameraChangeListener() {
                     @Override
                     public void onCameraChange(CameraPosition cameraPosition) {
 
                         // Get the distance in meters between the corners of the map bounds.
                         // We'll use this as the distance to fetch bathrooms for.
-                        LatLngBounds bounds = mMap.getProjection().getVisibleRegion().latLngBounds;
+                        LatLngBounds bounds = mMap.getMap().getProjection().getVisibleRegion().latLngBounds;
                         float[] results = new float[1];
                         Location.distanceBetween(
                                 bounds.northeast.latitude,
@@ -129,7 +137,7 @@ public class BathroomMapFragment extends SupportMapFragment {
                     }
                 });
 
-                mMap.setOnMarkerClickListener(new GoogleMap.OnMarkerClickListener() {
+                mMap.getMap().setOnMarkerClickListener(new GoogleMap.OnMarkerClickListener() {
                     @Override
                     public boolean onMarkerClick(Marker marker) {
                         clearSelectedBathroom();
@@ -148,7 +156,7 @@ public class BathroomMapFragment extends SupportMapFragment {
                     }
                 });
 
-                mMap.setOnMapClickListener(new GoogleMap.OnMapClickListener() {
+                mMap.getMap().setOnMapClickListener(new GoogleMap.OnMapClickListener() {
                     @Override
                     public void onMapClick(LatLng latLng) {
                         boolean selectionCleared = clearSelectedBathroom();
@@ -196,7 +204,7 @@ public class BathroomMapFragment extends SupportMapFragment {
 
         builder.target(new LatLng(latitude, longitude));
 
-        CameraPosition currentCameraPosition = mMap.getCameraPosition();
+        CameraPosition currentCameraPosition = mMap.getMap().getCameraPosition();
 
         if (currentCameraPosition.zoom > CLICKED_BATHROOM_ZOOM_LEVEL + 2 ||
                 currentCameraPosition.zoom < CLICKED_BATHROOM_ZOOM_LEVEL - 2) {
@@ -205,7 +213,7 @@ public class BathroomMapFragment extends SupportMapFragment {
             builder.zoom(currentCameraPosition.zoom);
         }
 
-        mMap.animateCamera(CameraUpdateFactory.newCameraPosition(builder.build()));
+        mMap.getMap().animateCamera(CameraUpdateFactory.newCameraPosition(builder.build()));
     }
 
     @MainThread
@@ -226,6 +234,14 @@ public class BathroomMapFragment extends SupportMapFragment {
         mBathroomsOnMap.put(updatedBathroom.getId(), updatedBathroom);
     }
 
+    public List<GoogleMapCategorizer.CategoryInfo<String>> getCategories() {
+        return mMap.getCategories();
+    }
+
+    public void showCategory(String category, boolean show) {
+        mMap.showCategory(category, show);
+    }
+
     private void fetchBathrooms(double latitude, double longitude, int distance) {
         new FetchBathroomsTask().execute(latitude, longitude, (double)distance);
     }
@@ -233,7 +249,7 @@ public class BathroomMapFragment extends SupportMapFragment {
     private boolean clearSelectedBathroom() {
         boolean selectionCleared = false;
         if (mSelectedMarker != null) {
-            mSelectedMarker.remove();
+            mMap.removeMarker(mSelectedMarker);
             mSelectedMarker = null;
             selectionCleared = true;
         }
@@ -247,7 +263,7 @@ public class BathroomMapFragment extends SupportMapFragment {
             MarkerOptions markerOptions = new MarkerOptions()
                     .position(Util.createBathroomLatLng(bathroom))
                     .icon(BitmapDescriptorFactory.fromResource(R.drawable.ic_poo));
-            mSelectedMarker = mMap.addMarker(markerOptions);
+            mSelectedMarker = mMap.addMarker(markerOptions, null);
         }
     }
 
@@ -295,7 +311,7 @@ public class BathroomMapFragment extends SupportMapFragment {
                         MarkerOptions markerOptions = new MarkerOptions()
                                 .position(Util.createBathroomLatLng(bathroom))
                                 .title(bathroom.getName());
-                        Marker marker = mMap.addMarker(markerOptions);
+                        Marker marker = mMap.addMarker(markerOptions, bathroom.getCategory());
                         mMarkerMap.put(marker.getId(), bathroom);
                         mBathroomsOnMap.put(bathroom.getId(), bathroom);
                     } else {

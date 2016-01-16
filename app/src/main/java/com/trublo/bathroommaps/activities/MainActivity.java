@@ -5,6 +5,7 @@ import android.location.Location;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.os.Parcelable;
 import android.support.v4.app.Fragment;
 import android.util.Log;
 import android.view.Menu;
@@ -19,17 +20,25 @@ import com.trublo.bathroommaps.R;
 import com.trublo.bathroommaps.Util;
 import com.trublo.bathroommaps.bathroommaps.Bathroom;
 import com.trublo.bathroommaps.fragments.BathroomMapFragment;
+import com.trublo.bathroommaps.fragments.CategoryFilterFragment;
 import com.trublo.bathroommaps.fragments.ReviewListFragment;
 import com.trublo.bathroommaps.googlemaps.GoogleMaps;
+
+import java.util.Iterator;
+import java.util.List;
+import java.util.ListIterator;
+import java.util.Map;
 
 public class MainActivity extends SingleFragmentActivity implements BathroomMapFragment.Callbacks {
     private static final String TAG = "MainActivity";
 
     private static final String STATE_SELECTED_BATHROOM = "selected_bathroom";
     private static final int REQUEST_SHOW_REVIEWS = 1;
+    private static final int REQUEST_FILTER_CATEGORIES = 2;
 
     private View mProgressView;
     private View mLocateButton;
+    private View mFilterButton;
     private View mToolbarRootView;
     private TextView mToolbarNameTextView;
     private TextView mToolbarTimeTextView;
@@ -59,7 +68,16 @@ public class MainActivity extends SingleFragmentActivity implements BathroomMapF
         mLocateButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                ((BathroomMapFragment)getFragment()).centerMap();
+                getMapFragment().centerMap();
+            }
+        });
+
+        mFilterButton = Util.findView(this, R.id.activity_main_filter_button);
+        mFilterButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Intent intent = CategoryFilterActivity.newIntent(MainActivity.this, getMapFragment().getCategories());
+                startActivityForResult(intent, REQUEST_FILTER_CATEGORIES);
             }
         });
 
@@ -146,9 +164,17 @@ public class MainActivity extends SingleFragmentActivity implements BathroomMapF
 
         if (requestCode == REQUEST_SHOW_REVIEWS) {
             Bathroom updatedBathroom = data.getParcelableExtra(ReviewListFragment.EXTRA_UPDATED_BATHROOM);
-            ((BathroomMapFragment)getFragment()).notifyBathroomUpdated(updatedBathroom);
+            getMapFragment().notifyBathroomUpdated(updatedBathroom);
             mSelectedBathroom = updatedBathroom;
             updateToolbar(mSelectedBathroom, false);
+        } else if (requestCode == REQUEST_FILTER_CATEGORIES) {
+            BathroomMapFragment bathroomMapFragment = getMapFragment();
+            List<Parcelable> parcelables = data.getParcelableArrayListExtra(CategoryFilterFragment.EXTRA_CATEGORY_FILTER_ITEMS);
+            List<CategoryFilterFragment.CategoryFilterItem> categoryFilterItems = Util.cast(parcelables);
+            for (Iterator<CategoryFilterFragment.CategoryFilterItem> iterator = categoryFilterItems.iterator(); iterator.hasNext();) {
+                CategoryFilterFragment.CategoryFilterItem item = iterator.next();
+                bathroomMapFragment.showCategory(item.getCategoryId(), item.isVisible());
+            }
         }
     }
 
@@ -169,6 +195,10 @@ public class MainActivity extends SingleFragmentActivity implements BathroomMapF
         }
 
         Util.showView(mToolbarRootView, (bathroom != null));
+    }
+
+    private BathroomMapFragment getMapFragment() {
+        return (BathroomMapFragment)getFragment();
     }
 
     private void updateToolbar(Bathroom bathroom, boolean updateTime) {
