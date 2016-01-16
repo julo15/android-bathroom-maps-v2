@@ -1,8 +1,10 @@
 package com.trublo.bathroommaps.fragments;
 
 import android.app.Activity;
+import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
+import android.os.Parcelable;
 import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
 import android.support.v7.widget.LinearLayoutManager;
@@ -30,6 +32,7 @@ public class ReviewListFragment extends Fragment {
 
     private static final String ARG_BATHROOM = "bathroom";
     private static final int REQUEST_ADD_REVIEW = 1;
+    public static final String EXTRA_UPDATED_BATHROOM = "com.trublo.bathroommaps.updated_bathroom";
 
     private Bathroom mBathroom;
     private RecyclerView mRecyclerView;
@@ -82,6 +85,17 @@ public class ReviewListFragment extends Fragment {
         if (requestCode == REQUEST_ADD_REVIEW) {
             Toast.makeText(getActivity(), R.string.send_review_succeeded, Toast.LENGTH_SHORT)
                     .show();
+
+            // A little hacky but this works. Now that the bathroom has been updated, update the fragment
+            // argument and recreate the review adapter. We update the fragment argument to ensure that
+            // the updated bathroom is used when the fragment is recreated on a config change (rotation).
+            Parcelable bathroom = data.getParcelableExtra(ReviewFragment.EXTRA_UPDATED_BATHROOM);
+            getArguments().putParcelable(ARG_BATHROOM, bathroom);
+            setupAdapter();
+
+            Intent dataResult = new Intent();
+            dataResult.putExtra(EXTRA_UPDATED_BATHROOM, bathroom);
+            getActivity().setResult(Activity.RESULT_OK, dataResult);
         }
     }
 

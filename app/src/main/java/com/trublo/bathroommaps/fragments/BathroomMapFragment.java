@@ -3,6 +3,7 @@ package com.trublo.bathroommaps.fragments;
 import android.location.Location;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.support.annotation.MainThread;
 import android.util.Log;
 import android.widget.Toast;
 
@@ -27,6 +28,7 @@ import org.json.JSONException;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 
@@ -37,7 +39,6 @@ public class BathroomMapFragment extends SupportMapFragment {
     private static final String TAG = "BathroomMapFragment";
 
     private static final int CLICKED_BATHROOM_ZOOM_LEVEL = 16;
-    private static final int CENTER_MAP_ANIMATION_DURATION = 200;
 
     private GoogleApiClient mClient;
     private GoogleMap mMap;
@@ -207,8 +208,26 @@ public class BathroomMapFragment extends SupportMapFragment {
         mMap.animateCamera(CameraUpdateFactory.newCameraPosition(builder.build()));
     }
 
+    @MainThread
+    public void notifyBathroomUpdated(Bathroom updatedBathroom) {
+        // We need to update both of our hashmaps that contain Bathroom instances with the new bathroom
+        // For each, we find the Bathroom instance that has the matching ID, and replace accordingly.
+        Util.updateValueInMap(mMarkerMap, updatedBathroom, new Comparator<Bathroom>() {
+            @Override
+            public int compare(Bathroom lhs, Bathroom rhs) {
+                return (lhs.getId().equals(rhs.getId())) ? 0 : 1;
+            }
+        });
+
+        if (!mBathroomsOnMap.containsKey(updatedBathroom.getId())) {
+            throw new IllegalArgumentException("Bathroom not found in bathroom map");
+        }
+
+        mBathroomsOnMap.put(updatedBathroom.getId(), updatedBathroom);
+    }
+
     private void fetchBathrooms(double latitude, double longitude, int distance) {
-        new FetchBathroomsTask().execute(latitude, longitude, (double) distance);
+        new FetchBathroomsTask().execute(latitude, longitude, (double)distance);
     }
 
     private boolean clearSelectedBathroom() {

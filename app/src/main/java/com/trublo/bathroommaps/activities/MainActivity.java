@@ -19,12 +19,14 @@ import com.trublo.bathroommaps.R;
 import com.trublo.bathroommaps.Util;
 import com.trublo.bathroommaps.bathroommaps.Bathroom;
 import com.trublo.bathroommaps.fragments.BathroomMapFragment;
+import com.trublo.bathroommaps.fragments.ReviewListFragment;
 import com.trublo.bathroommaps.googlemaps.GoogleMaps;
 
 public class MainActivity extends SingleFragmentActivity implements BathroomMapFragment.Callbacks {
     private static final String TAG = "MainActivity";
 
     private static final String STATE_SELECTED_BATHROOM = "selected_bathroom";
+    private static final int REQUEST_SHOW_REVIEWS = 1;
 
     private View mProgressView;
     private View mLocateButton;
@@ -90,7 +92,7 @@ public class MainActivity extends SingleFragmentActivity implements BathroomMapF
             @Override
             public void onClick(View v) {
                 Intent intent = ReviewListActivity.newIntent(MainActivity.this, mSelectedBathroom);
-                startActivity(intent);
+                startActivityForResult(intent, REQUEST_SHOW_REVIEWS);
             }
         };
 
@@ -131,6 +133,22 @@ public class MainActivity extends SingleFragmentActivity implements BathroomMapF
                 return true;
             default:
                 return super.onOptionsItemSelected(item);
+        }
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+
+        if (resultCode != RESULT_OK) {
+            return;
+        }
+
+        if (requestCode == REQUEST_SHOW_REVIEWS) {
+            Bathroom updatedBathroom = data.getParcelableExtra(ReviewListFragment.EXTRA_UPDATED_BATHROOM);
+            ((BathroomMapFragment)getFragment()).notifyBathroomUpdated(updatedBathroom);
+            mSelectedBathroom = updatedBathroom;
+            updateToolbar(mSelectedBathroom, false);
         }
     }
 

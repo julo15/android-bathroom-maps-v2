@@ -1,6 +1,7 @@
 package com.trublo.bathroommaps.fragments;
 
 import android.app.Activity;
+import android.content.Intent;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
@@ -22,6 +23,7 @@ import com.trublo.bathroommaps.bathroommaps.BathroomMaps;
 public class ReviewFragment extends Fragment {
 
     private static final String ARG_BATHROOM = "bathroom";
+    public static final String EXTRA_UPDATED_BATHROOM = "com.trublo.bathroommaps.updated_bathroom";
 
     private Bathroom mBathroom;
     private View mSendReviewButton;
@@ -62,12 +64,14 @@ public class ReviewFragment extends Fragment {
         return view;
     }
 
-    private void sendResult() {
+    private void sendResult(Bathroom updatedBathroom) {
         Fragment targetFragment = getTargetFragment();
+        Intent data = new Intent();
+        data.putExtra(EXTRA_UPDATED_BATHROOM, updatedBathroom);
         if (targetFragment != null) {
-            targetFragment.onActivityResult(getTargetRequestCode(), Activity.RESULT_OK, null);
+            targetFragment.onActivityResult(getTargetRequestCode(), Activity.RESULT_OK, data);
         } else {
-            getActivity().setResult(Activity.RESULT_OK);
+            getActivity().setResult(Activity.RESULT_OK, data);
             getActivity().finish();
         }
     }
@@ -78,6 +82,7 @@ public class ReviewFragment extends Fragment {
         private int mRating;
         private String mText;
         private Exception mException;
+        private Bathroom mUpdatedBathroom;
 
         public SendReviewTask(String bathroomId, int rating, String text) {
             mBathroomId = bathroomId;
@@ -88,7 +93,7 @@ public class ReviewFragment extends Fragment {
         @Override
         protected Void doInBackground(Void... params) {
             try {
-                new BathroomMaps().submitReview(mBathroomId, mRating, mText);
+                mUpdatedBathroom = new BathroomMaps().submitReview(mBathroomId, mRating, mText);
             } catch (Exception e) {
                 mException = e;
             }
@@ -101,7 +106,7 @@ public class ReviewFragment extends Fragment {
                 return;
             }
 
-            sendResult();
+            sendResult(mUpdatedBathroom);
         }
     }
 }

@@ -99,7 +99,7 @@ public class BathroomMaps {
         return review;
     }
 
-    public void submitReview(String bathroomId, int rating, String text) throws IOException, JSONException {
+    public Bathroom submitReview(String bathroomId, int rating, String text) throws IOException, JSONException {
         String url = ENDPOINT
                 .buildUpon()
                 .appendPath("addreview")
@@ -118,6 +118,8 @@ public class BathroomMaps {
 
         JSONObject responseJsonObject = new JSONObject(response.body().string());
         throwIfResponseFailed(responseJsonObject);
+
+        return parseBathroom(responseJsonObject.getJSONObject("bathroom"));
     }
 
     private void throwIfResponseFailed(JSONObject responseJsonObject) throws IOException, JSONException {

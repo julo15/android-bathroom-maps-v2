@@ -6,6 +6,10 @@ import android.view.View;
 import com.google.android.gms.maps.model.LatLng;
 import com.trublo.bathroommaps.bathroommaps.Bathroom;
 
+import java.util.Comparator;
+import java.util.Iterator;
+import java.util.Map;
+
 /**
  * Created by julianlo on 1/6/16.
  */
@@ -33,5 +37,17 @@ public class Util {
 
     public static String coordsToString(double latitude, double longitude) {
         return String.format("%f,%f", latitude, longitude);
+    }
+
+    public static <K, V> void updateValueInMap(Map<K, V> map, V updatedValue, Comparator<V> comparator) {
+        for (Iterator<Map.Entry<K, V>> iterator = map.entrySet().iterator(); iterator.hasNext();) {
+            Map.Entry<K, V> entry = iterator.next();
+            V value = entry.getValue();
+            if (comparator.compare(value, updatedValue) == 0) {
+                iterator.remove();
+                map.put(entry.getKey(), updatedValue);
+                break;
+            }
+        }
     }
 }
