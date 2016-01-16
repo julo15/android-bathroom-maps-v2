@@ -19,8 +19,12 @@ import com.trublo.bathroommaps.R;
 import com.trublo.bathroommaps.Util;
 import com.trublo.bathroommaps.bathroommaps.Bathroom;
 import com.trublo.bathroommaps.fragments.BathroomMapFragment;
+import com.trublo.bathroommaps.fragments.CategoryFilterFragment;
 import com.trublo.bathroommaps.fragments.ReviewListFragment;
 import com.trublo.bathroommaps.googlemaps.GoogleMaps;
+
+import java.util.Iterator;
+import java.util.Map;
 
 public class MainActivity extends SingleFragmentActivity implements BathroomMapFragment.Callbacks {
     private static final String TAG = "MainActivity";
@@ -161,7 +165,13 @@ public class MainActivity extends SingleFragmentActivity implements BathroomMapF
             mSelectedBathroom = updatedBathroom;
             updateToolbar(mSelectedBathroom, false);
         } else if (requestCode == REQUEST_FILTER_CATEGORIES) {
-
+            Map<String, Boolean> categoryVisibilities = Util.createMapFromArrays(
+                    data.getStringArrayExtra(CategoryFilterFragment.EXTRA_CATEGORY_NAMES),
+                    (Boolean[])data.getSerializableExtra(CategoryFilterFragment.EXTRA_CATEGORY_VISIBILITIES));
+            for (Iterator<Map.Entry<String, Boolean>> iterator = categoryVisibilities.entrySet().iterator(); iterator.hasNext();) {
+                Map.Entry<String, Boolean> entry = iterator.next();
+                getMapFragment().showCategory(entry.getKey(), entry.getValue());
+            }
         }
     }
 

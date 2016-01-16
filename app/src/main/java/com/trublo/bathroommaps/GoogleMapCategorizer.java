@@ -29,7 +29,7 @@ public class GoogleMapCategorizer<T> {
 
     private GoogleMap mMap;
     private HashMap<T, Set<Marker>> mCategoryMap = new HashMap<>();          // primary category container
-    private HashMap<Marker, T> mMarkerCategoryMap = new HashMap<>();
+    private HashMap<Marker, T> mMarkerCategoryMap = new HashMap<>();         // used only to support removeMarker
     private HashMap<T, BitmapDescriptor> mCategoryIconMap = new HashMap<>(); // populated on-demand
     private HashMap<T, Boolean> mCategoryVisibilityMap = new HashMap<>();    // populated on category creation
     private int mNextIconIndex;
@@ -112,6 +112,7 @@ public class GoogleMapCategorizer<T> {
             for (Marker marker : markers) {
                 marker.setVisible(show);
             }
+            mCategoryVisibilityMap.put(category, show);
         }
     }
 

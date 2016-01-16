@@ -232,6 +232,10 @@ public class BathroomMapFragment extends SupportMapFragment {
         return mMap.getCategoryVisibilityMap();
     }
 
+    public void showCategory(String category, boolean show) {
+        mMap.showCategory(category, show);
+    }
+
     private void fetchBathrooms(double latitude, double longitude, int distance) {
         new FetchBathroomsTask().execute(latitude, longitude, (double)distance);
     }
