@@ -27,9 +27,11 @@ public class MainActivity extends SingleFragmentActivity implements BathroomMapF
 
     private static final String STATE_SELECTED_BATHROOM = "selected_bathroom";
     private static final int REQUEST_SHOW_REVIEWS = 1;
+    private static final int REQUEST_FILTER_CATEGORIES = 2;
 
     private View mProgressView;
     private View mLocateButton;
+    private View mFilterButton;
     private View mToolbarRootView;
     private TextView mToolbarNameTextView;
     private TextView mToolbarTimeTextView;
@@ -59,7 +61,16 @@ public class MainActivity extends SingleFragmentActivity implements BathroomMapF
         mLocateButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                ((BathroomMapFragment)getFragment()).centerMap();
+                getMapFragment().centerMap();
+            }
+        });
+
+        mFilterButton = Util.findView(this, R.id.activity_main_filter_button);
+        mFilterButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Intent intent = CategoryFilterActivity.newIntent(MainActivity.this, getMapFragment().getCategoryVisibilityMap());
+                startActivityForResult(intent, REQUEST_FILTER_CATEGORIES);
             }
         });
 
@@ -146,9 +157,11 @@ public class MainActivity extends SingleFragmentActivity implements BathroomMapF
 
         if (requestCode == REQUEST_SHOW_REVIEWS) {
             Bathroom updatedBathroom = data.getParcelableExtra(ReviewListFragment.EXTRA_UPDATED_BATHROOM);
-            ((BathroomMapFragment)getFragment()).notifyBathroomUpdated(updatedBathroom);
+            getMapFragment().notifyBathroomUpdated(updatedBathroom);
             mSelectedBathroom = updatedBathroom;
             updateToolbar(mSelectedBathroom, false);
+        } else if (requestCode == REQUEST_FILTER_CATEGORIES) {
+
         }
     }
 
@@ -169,6 +182,10 @@ public class MainActivity extends SingleFragmentActivity implements BathroomMapF
         }
 
         Util.showView(mToolbarRootView, (bathroom != null));
+    }
+
+    private BathroomMapFragment getMapFragment() {
+        return (BathroomMapFragment)getFragment();
     }
 
     private void updateToolbar(Bathroom bathroom, boolean updateTime) {
