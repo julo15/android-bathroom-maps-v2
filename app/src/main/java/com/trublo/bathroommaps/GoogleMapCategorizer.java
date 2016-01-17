@@ -171,20 +171,19 @@ public class GoogleMapCategorizer<T> {
         return mCategoryInfoList;
     }
 
-    public void showCategory(T category, boolean show) {
+    public Set<Marker> showCategory(T category, boolean show) {
+
         CategoryInfo<T> categoryInfo = mCategoryInfoMap.get(category);
         if (categoryInfo == null) {
             Log.w(TAG, "Could not find categoryinfo for category " + category.toString());
-            return;
+            return null;
         }
 
-        boolean visible = categoryInfo.isVisible();
-        if (visible != show) {
-            for (Marker marker : categoryInfo.getMarkers()) {
-                marker.setVisible(show);
-            }
-            categoryInfo.setIsVisible(show);
+        for (Marker marker : categoryInfo.getMarkers()) {
+            marker.setVisible(show);
         }
+        categoryInfo.setIsVisible(show);
+        return categoryInfo.getMarkers();
     }
 
     private BitmapDescriptor retrieveIconForNewCategory(T category) {

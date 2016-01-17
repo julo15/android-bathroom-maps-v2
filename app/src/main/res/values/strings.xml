@@ -14,6 +14,10 @@
     <string name="review_text_hint">Write your review!</string>
     <string name="send_review_button">Send your review</string>
     <string name="send_review_succeeded">Your review has been sent!</string>
+    <string name="rating_filter_notch_all">All</string>
+    <string name="rating_filter_notch_2">>2</string>
+    <string name="rating_filter_notch_3">>3</string>
+    <string name="rating_filter_notch_4">>4</string>
 
     <plurals name="review_count">
         <item quantity="one">%d review</item>
