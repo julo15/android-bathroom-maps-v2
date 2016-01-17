@@ -54,6 +54,8 @@ public class BathroomMapFragment extends SupportMapFragment {
     private HashMap<String, Bathroom> mBathroomsOnMap = new HashMap<>(); // maps bathroom id to bathroom for bathrooms on the map already
     private Marker mSelectedMarker;
     private boolean mPerformedInitialCentering;
+    private LatLng mLastFetchLocation;
+    private int mLastFetchDistance;
 
     public static BathroomMapFragment newInstance() {
         return new BathroomMapFragment();
@@ -132,6 +134,20 @@ public class BathroomMapFragment extends SupportMapFragment {
                         if (distance > 20 * 1000) {
                             Log.v(TAG, "Distance is " + distance + "m, skipping bathroom fetch");
                             return;
+                        }
+
+                        if (mLastFetchLocation != null) {
+                            Location.distanceBetween(
+                                    mLastFetchLocation.latitude,
+                                    mLastFetchLocation.longitude,
+                                    cameraPosition.target.latitude,
+                                    cameraPosition.target.longitude,
+                                    results);
+                            int distanceFromLastFetch = (int)results[0];
+                            if (distanceFromLastFetch * 2 < mLastFetchDistance) {
+                                Log.v(TAG, "Distance from last fetch point is less than half last fetch distance, skipping bathroom fetch");
+                                return;
+                            }
                         }
                         fetchBathrooms(cameraPosition.target.latitude, cameraPosition.target.longitude, distance);
                     }
@@ -243,7 +259,7 @@ public class BathroomMapFragment extends SupportMapFragment {
     }
 
     private void fetchBathrooms(double latitude, double longitude, int distance) {
-        new FetchBathroomsTask().execute(latitude, longitude, (double)distance);
+        new FetchBathroomsTask(latitude, longitude, distance).execute();
     }
 
     private boolean clearSelectedBathroom() {
@@ -271,8 +287,17 @@ public class BathroomMapFragment extends SupportMapFragment {
         return Util.cast(getActivity());
     }
 
-    private class FetchBathroomsTask extends AsyncTask<Double,Void,List<Bathroom>> {
+    private class FetchBathroomsTask extends AsyncTask<Void,Void,List<Bathroom>> {
         private Exception mException;
+        private double mLatitude;
+        private double mLongitude;
+        private int mDistance;
+
+        public FetchBathroomsTask(double latitude, double longitude, int distance) {
+            mLatitude = latitude;
+            mLongitude = longitude;
+            mDistance = distance;
+        }
 
         @Override
         protected void onPreExecute() {
@@ -280,13 +305,9 @@ public class BathroomMapFragment extends SupportMapFragment {
         }
 
         @Override
-        protected List<Bathroom> doInBackground(Double... params) {
+        protected List<Bathroom> doInBackground(Void... params) {
             try {
-                double latitude = params[0];
-                double longitude = params[1];
-                int distance = params[2].intValue();
-
-                List<Bathroom> bathrooms = new BathroomMaps().fetchBathrooms(latitude, longitude, distance);
+                List<Bathroom> bathrooms = new BathroomMaps().fetchBathrooms(mLatitude, mLongitude, mDistance);
                 return bathrooms;
             } catch (Exception e) {
                 mException = e;
@@ -318,6 +339,8 @@ public class BathroomMapFragment extends SupportMapFragment {
                         Log.v(TAG, "Bathroom '" + bathroom.getName() + "' already on map");
                     }
                 }
+                mLastFetchLocation = new LatLng(mLatitude, mLongitude);
+                mLastFetchDistance = mDistance;
             }
             getCallbacks().onFetchingBathrooms(false);
         }
