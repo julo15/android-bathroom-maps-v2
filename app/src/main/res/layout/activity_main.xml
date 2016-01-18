@@ -143,11 +143,21 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginRight="@dimen/padding_normal"
+        android:layout_marginEnd="@dimen/padding_normal"
         android:layout_above="@id/activity_main_filter_button"
         android:layout_alignParentRight="true"
         android:layout_alignParentEnd="true"
         android:src="@drawable/ic_my_location_black_24dp"
         app:backgroundTint="@color/color_background_white" />
+
+    <android.support.design.widget.FloatingActionButton
+        android:id="@+id/activity_main_add_button"
+        android:clickable="true"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_margin="@dimen/padding_normal"
+        android:layout_alignParentBottom="true"
+        app:backgroundTint="@color/color_background_white"/>
 
     </RelativeLayout>
 

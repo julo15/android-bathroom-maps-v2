@@ -26,6 +26,7 @@
         <activity android:name=".activities.ReviewListActivity" />
         <activity android:name=".activities.ReviewActivity" />
         <activity android:name=".activities.CategoryFilterActivity" />
+        <activity android:name=".activities.AddBathroomActivity" />
 
         <meta-data
             android:name="com.google.android.geo.API_KEY"

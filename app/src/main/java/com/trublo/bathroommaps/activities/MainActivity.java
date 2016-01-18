@@ -39,6 +39,7 @@ public class MainActivity extends SingleFragmentActivity implements BathroomMapF
     private View mProgressView;
     private View mLocateButton;
     private View mFilterButton;
+    private View mAddButton;
     private View mToolbarRootView;
     private TextView mToolbarNameTextView;
     private TextView mToolbarTimeTextView;
@@ -82,6 +83,15 @@ public class MainActivity extends SingleFragmentActivity implements BathroomMapF
                         getMapFragment().getCategories(),
                         getMapFragment().getMinimumRatingFilter());
                 startActivityForResult(intent, REQUEST_FILTER_CATEGORIES);
+            }
+        });
+
+        mAddButton = Util.findView(this, R.id.activity_main_add_button);
+        mAddButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Intent intent = AddBathroomActivity.newIntent(MainActivity.this);
+                startActivity(intent);
             }
         });
 
