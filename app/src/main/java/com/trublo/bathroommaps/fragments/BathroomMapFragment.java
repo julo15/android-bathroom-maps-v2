@@ -43,13 +43,6 @@ public class BathroomMapFragment extends SupportMapFragment {
 
     private static final int CLICKED_BATHROOM_ZOOM_LEVEL = 16;
 
-    private static final GoogleMapCategorizer.CategoryDescriptor<String>[] DEFAULT_CATEGORIES = new GoogleMapCategorizer.CategoryDescriptor[] {
-            new GoogleMapCategorizer.CategoryDescriptor<String>()
-                .setId("Public"),
-            new GoogleMapCategorizer.CategoryDescriptor<String>()
-                .setId("Coffee Shop")
-    };
-
     private GoogleApiClient mClient;
     private GoogleMapCategorizer<String> mMap;
     private HashMap<String, Bathroom> mMarkerMap = new HashMap<>(); // maps marker to bathroom
@@ -107,7 +100,12 @@ public class BathroomMapFragment extends SupportMapFragment {
         getMapAsync(new OnMapReadyCallback() {
             @Override
             public void onMapReady(GoogleMap googleMap) {
-                mMap = new GoogleMapCategorizer<>(googleMap, DEFAULT_CATEGORIES);
+                GoogleMapCategorizer.CategoryDescriptor<String>[] categoryDescriptors = Util.cast(new GoogleMapCategorizer.CategoryDescriptor[BathroomMaps.CATEGORIES.size()]);
+                for (int i = 0; i < BathroomMaps.CATEGORIES.size(); i++) {
+                    categoryDescriptors[i] = new GoogleMapCategorizer.CategoryDescriptor<String>()
+                            .setId(BathroomMaps.CATEGORIES.get(i));
+                }
+                mMap = new GoogleMapCategorizer<>(googleMap, categoryDescriptors);
 
                 try {
                     mMap.getMap().setMyLocationEnabled(true);

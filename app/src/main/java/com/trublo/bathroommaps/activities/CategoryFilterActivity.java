@@ -29,6 +29,7 @@ public class CategoryFilterActivity extends SingleFragmentActivity {
             CategoryFilterFragment.CategoryFilterItem item = new CategoryFilterFragment.CategoryFilterItem();
             item.setCategoryId(categoryInfo.getId());
             item.setIsVisible(categoryInfo.isVisible());
+            item.setIconDescriptor(categoryInfo.getIconDescriptor());
             items.add(item);
         }
         intent.putExtra(EXTRA_CATEGORY_FILTER_ITEMS, items);

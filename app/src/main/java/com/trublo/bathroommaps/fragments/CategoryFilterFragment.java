@@ -2,6 +2,7 @@ package com.trublo.bathroommaps.fragments;
 
 import android.app.Activity;
 import android.content.Intent;
+import android.graphics.Color;
 import android.os.Bundle;
 import android.os.Parcel;
 import android.os.Parcelable;
@@ -16,11 +17,14 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.CompoundButton;
 import android.widget.EditText;
+import android.widget.FrameLayout;
+import android.widget.ImageView;
 import android.widget.SeekBar;
 import android.widget.TextView;
 import android.widget.Toast;
 import android.widget.ToggleButton;
 
+import com.trublo.bathroommaps.GoogleMapCategorizer;
 import com.trublo.bathroommaps.R;
 import com.trublo.bathroommaps.Util;
 
@@ -59,6 +63,7 @@ public class CategoryFilterFragment extends Fragment {
     public static class CategoryFilterItem implements Parcelable {
         private String mCategoryId;
         private boolean mIsVisible;
+        private GoogleMapCategorizer.ParcelableBitmapDescriptor mIconDescriptor;
 
         public static final Parcelable.Creator<CategoryFilterItem> CREATOR = new Parcelable.Creator<CategoryFilterItem>() {
             @Override
@@ -69,6 +74,7 @@ public class CategoryFilterFragment extends Fragment {
                 boolean[] visible = new boolean[1];
                 source.readBooleanArray(visible);
                 item.mIsVisible = visible[0];
+                item.mIconDescriptor = source.readParcelable(GoogleMapCategorizer.ParcelableBitmapDescriptor.class.getClassLoader());
 
                 return item;
             }
@@ -89,6 +95,7 @@ public class CategoryFilterFragment extends Fragment {
             dest.writeString(mCategoryId);
             boolean[] visible = new boolean[] { mIsVisible };
             dest.writeBooleanArray(visible);
+            dest.writeParcelable(mIconDescriptor, 0);
         }
 
         public String getCategoryId() {
@@ -105,6 +112,14 @@ public class CategoryFilterFragment extends Fragment {
 
         public void setIsVisible(boolean isVisible) {
             mIsVisible = isVisible;
+        }
+
+        public GoogleMapCategorizer.ParcelableBitmapDescriptor getIconDescriptor() {
+            return mIconDescriptor;
+        }
+
+        public void setIconDescriptor(GoogleMapCategorizer.ParcelableBitmapDescriptor iconDescriptor) {
+            mIconDescriptor = iconDescriptor;
         }
     }
 
@@ -207,6 +222,7 @@ public class CategoryFilterFragment extends Fragment {
         private CategoryFilterItem mCategory;
         private TextView mTextView;
         private ToggleButton mToggleButton;
+        private FrameLayout mIconImageView;
 
         public CategoryHolder(View itemView) {
             super(itemView);
@@ -222,12 +238,20 @@ public class CategoryFilterFragment extends Fragment {
                     sendResult();
                 }
             });
+            mIconImageView = Util.findView(itemView, R.id.category_item_icon_image_view);
         }
 
         public void bindCategory(CategoryFilterItem category) {
             mCategory = category;
             mTextView.setText(category.getCategoryId());
             mToggleButton.setChecked(category.isVisible());
+
+            GoogleMapCategorizer.ParcelableBitmapDescriptor iconDescriptor = category.getIconDescriptor();
+            mIconImageView.setBackgroundColor(Color.TRANSPARENT);
+            if (iconDescriptor instanceof GoogleMapCategorizer.HueBitmapDescriptor) {
+                GoogleMapCategorizer.HueBitmapDescriptor hueBitmapDescriptor = Util.cast(iconDescriptor);
+                mIconImageView.setBackgroundColor(Color.HSVToColor(new float[] { hueBitmapDescriptor.getHue(), 1f, 1f }));
+            }
         }
     }
 

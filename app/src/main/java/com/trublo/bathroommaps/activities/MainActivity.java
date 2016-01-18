@@ -26,8 +26,6 @@ import com.trublo.bathroommaps.googlemaps.GoogleMaps;
 
 import java.util.Iterator;
 import java.util.List;
-import java.util.ListIterator;
-import java.util.Map;
 
 public class MainActivity extends SingleFragmentActivity implements BathroomMapFragment.Callbacks {
     private static final String TAG = "MainActivity";
