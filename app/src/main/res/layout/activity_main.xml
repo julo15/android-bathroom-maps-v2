@@ -62,11 +62,29 @@
 
                 </FrameLayout>
 
+                <FrameLayout
+                    android:id="@+id/bathroom_toolbar_category_icon"
+                    android:layout_width="@dimen/category_icon_toolbar"
+                    android:layout_height="@dimen/category_icon_toolbar"
+                    android:layout_below="@id/bathroom_toolbar_name_text_view"
+                    android:layout_marginTop="4dp"
+                    tools:background="#05e1ff" />
+
+                <TextView
+                    android:id="@+id/bathroom_toolbar_category_text_view"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_below="@id/bathroom_toolbar_name_text_view"
+                    android:layout_toRightOf="@id/bathroom_toolbar_category_icon"
+                    android:layout_toEndOf="@id/bathroom_toolbar_category_icon"
+                    android:padding="@dimen/category_text_view_padding"
+                    tools:text="Coffee Shop" />
+
                 <RatingBar
                     android:id="@+id/bathroom_toolbar_rating_bar"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_below="@id/bathroom_toolbar_name_text_view"
+                    android:layout_below="@id/bathroom_toolbar_category_text_view"
                     style="?android:attr/ratingBarStyleSmall"
                     android:isIndicator="true"
                     android:numStars="5" />

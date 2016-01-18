@@ -18,6 +18,7 @@
     <string name="rating_filter_notch_2">>2</string>
     <string name="rating_filter_notch_3">>3</string>
     <string name="rating_filter_notch_4">>4</string>
+    <string name="rating_filter_label">Minimum rating:</string>
 
     <plurals name="review_count">
         <item quantity="one">%d review</item>

@@ -1,6 +1,7 @@
 package com.trublo.bathroommaps.activities;
 
 import android.content.Intent;
+import android.graphics.Color;
 import android.location.Location;
 import android.net.Uri;
 import android.os.AsyncTask;
@@ -16,6 +17,7 @@ import android.widget.RatingBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.trublo.bathroommaps.GoogleMapCategorizer;
 import com.trublo.bathroommaps.R;
 import com.trublo.bathroommaps.Util;
 import com.trublo.bathroommaps.bathroommaps.Bathroom;
@@ -40,6 +42,8 @@ public class MainActivity extends SingleFragmentActivity implements BathroomMapF
     private View mToolbarRootView;
     private TextView mToolbarNameTextView;
     private TextView mToolbarTimeTextView;
+    private View mToolbarCategoryIconView;
+    private TextView mToolbarCategoryNameTextView;
     private ProgressBar mToolbarTimeProgressBar;
     private View mToolbarDirectionsButton;
     private RatingBar mToolbarRatingBar;
@@ -83,6 +87,8 @@ public class MainActivity extends SingleFragmentActivity implements BathroomMapF
 
         mToolbarRootView = Util.findView(this, R.id.bathroom_toolbar_root_view);
         mToolbarNameTextView = Util.findView(this, R.id.bathroom_toolbar_name_text_view);
+        mToolbarCategoryIconView = Util.findView(this, R.id.bathroom_toolbar_category_icon);
+        mToolbarCategoryNameTextView = Util.findView(this, R.id.bathroom_toolbar_category_text_view);
         mToolbarTimeTextView = Util.findView(this, R.id.bathroom_toolbar_time_text_view);
 
         mToolbarDirectionsButton = Util.findView(this, R.id.bathroom_toolbar_directions_button);
@@ -210,6 +216,21 @@ public class MainActivity extends SingleFragmentActivity implements BathroomMapF
     private void updateToolbar(Bathroom bathroom, boolean updateTime) {
         mToolbarNameTextView.setText(bathroom.getName());
 
+        int categoryColor = Color.TRANSPARENT;
+        for (GoogleMapCategorizer.CategoryInfo<String> categoryInfo : getMapFragment().getCategories()) {
+            if (categoryInfo.getId().equals(bathroom.getCategory())) {
+                if (categoryInfo.getIconDescriptor() instanceof GoogleMapCategorizer.HueBitmapDescriptor) {
+                    GoogleMapCategorizer.HueBitmapDescriptor hueBitmapDescriptor = Util.cast(categoryInfo.getIconDescriptor());
+                    categoryColor = Util.bathroomHueToColor(hueBitmapDescriptor.getHue());
+                }
+                break;
+            }
+        }
+        Util.showView(mToolbarCategoryIconView, categoryColor != Color.TRANSPARENT);
+        mToolbarCategoryIconView.setBackgroundColor(categoryColor);
+
+        mToolbarCategoryNameTextView.setText(bathroom.getCategory());
+
         int reviews = bathroom.getReviewCount();
         mToolbarRatingBar.setRating(bathroom.getAverageRating());
         Util.showView(mToolbarRatingBar, reviews > 0);
@@ -221,7 +242,7 @@ public class MainActivity extends SingleFragmentActivity implements BathroomMapF
 
         if (updateTime) {
             mFetchWalkingTimeTask = new FetchWalkingTimeTask();
-            Location currentLocation = ((BathroomMapFragment) getFragment()).getCurrentLocation();
+            Location currentLocation = getMapFragment().getCurrentLocation();
             if (currentLocation == null) {
                 Toast.makeText(this, R.string.current_location_unavailable, Toast.LENGTH_SHORT)
                         .show();

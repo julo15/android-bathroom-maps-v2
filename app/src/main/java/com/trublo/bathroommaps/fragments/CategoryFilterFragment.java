@@ -10,15 +10,11 @@ import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
-import android.text.Editable;
-import android.text.TextWatcher;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.CompoundButton;
-import android.widget.EditText;
 import android.widget.FrameLayout;
-import android.widget.ImageView;
 import android.widget.SeekBar;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -250,7 +246,7 @@ public class CategoryFilterFragment extends Fragment {
             mIconImageView.setBackgroundColor(Color.TRANSPARENT);
             if (iconDescriptor instanceof GoogleMapCategorizer.HueBitmapDescriptor) {
                 GoogleMapCategorizer.HueBitmapDescriptor hueBitmapDescriptor = Util.cast(iconDescriptor);
-                mIconImageView.setBackgroundColor(Color.HSVToColor(new float[] { hueBitmapDescriptor.getHue(), 1f, 1f }));
+                mIconImageView.setBackgroundColor(Util.bathroomHueToColor(hueBitmapDescriptor.getHue()));
             }
         }
     }

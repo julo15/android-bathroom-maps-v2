@@ -8,4 +8,6 @@
     <dimen name="time_text_view_paddingTop">4dp</dimen>
     <dimen name="time_text_view_paddingRight">24dp</dimen>
     <dimen name="category_icon">40dp</dimen>
+    <dimen name="category_icon_toolbar">16dp</dimen>
+    <dimen name="category_text_view_padding">4dp</dimen>
 </resources>
