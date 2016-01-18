@@ -7,7 +7,6 @@ import com.google.android.gms.maps.model.LatLng;
 import com.trublo.bathroommaps.bathroommaps.Bathroom;
 
 import java.util.Comparator;
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 
@@ -16,14 +15,17 @@ import java.util.Map;
  */
 public class Util {
 
+    @SuppressWarnings("unchecked")
     public static <T> T cast(Object o) {
         return (T)o;
     }
 
+    @SuppressWarnings("unchecked")
     public static <T> T findView(View view, int id) {
         return (T)view.findViewById(id);
     }
 
+    @SuppressWarnings("unchecked")
     public static <T> T findView(Activity activity, int id) {
         return (T)activity.findViewById(id);
     }
@@ -50,16 +52,5 @@ public class Util {
                 break;
             }
         }
-    }
-
-    public static <K, V> Map<K, V> createMapFromArrays(K[] keys, V[] values) {
-        if (keys.length != values.length) {
-            throw new IllegalArgumentException("Key and value arrays are not the same length");
-        }
-        Map<K, V> map = new HashMap<>(keys.length);
-        for (int i = 0; i < keys.length; i++) {
-            map.put(keys[i], values[i]);
-        }
-        return map;
     }
 }

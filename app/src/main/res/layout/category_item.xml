@@ -4,11 +4,19 @@
               android:layout_width="match_parent"
               android:layout_height="match_parent">
 
+    <FrameLayout
+        android:id="@+id/category_item_icon_image_view"
+        android:layout_width="@dimen/category_icon"
+        android:layout_height="@dimen/category_icon"
+        android:layout_margin="@dimen/spacing_normal"
+        tools:background="#00DD00"/>
+
     <TextView
         android:id="@+id/category_item_text_view"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:layout_weight="1" />
+        android:layout_weight="1"
+        tools:text="Coffee Shops" />
 
     <ToggleButton
         android:id="@+id/category_item_toggle_button"

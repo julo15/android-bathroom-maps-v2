@@ -31,7 +31,9 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
+import java.util.Set;
 
 /**
  * Created by julianlo on 1/6/16.
@@ -41,13 +43,6 @@ public class BathroomMapFragment extends SupportMapFragment {
 
     private static final int CLICKED_BATHROOM_ZOOM_LEVEL = 16;
 
-    private static final GoogleMapCategorizer.CategoryDescriptor<String>[] DEFAULT_CATEGORIES = new GoogleMapCategorizer.CategoryDescriptor[] {
-            new GoogleMapCategorizer.CategoryDescriptor<String>()
-                .setId("Public"),
-            new GoogleMapCategorizer.CategoryDescriptor<String>()
-                .setId("Coffee Shop")
-    };
-
     private GoogleApiClient mClient;
     private GoogleMapCategorizer<String> mMap;
     private HashMap<String, Bathroom> mMarkerMap = new HashMap<>(); // maps marker to bathroom
@@ -56,6 +51,7 @@ public class BathroomMapFragment extends SupportMapFragment {
     private boolean mPerformedInitialCentering;
     private LatLng mLastFetchLocation;
     private int mLastFetchDistance;
+    private float mMinimumRatingFilter = 0;
 
     public static BathroomMapFragment newInstance() {
         return new BathroomMapFragment();
@@ -104,7 +100,12 @@ public class BathroomMapFragment extends SupportMapFragment {
         getMapAsync(new OnMapReadyCallback() {
             @Override
             public void onMapReady(GoogleMap googleMap) {
-                mMap = new GoogleMapCategorizer<>(googleMap, DEFAULT_CATEGORIES);
+                GoogleMapCategorizer.CategoryDescriptor<String>[] categoryDescriptors = Util.cast(new GoogleMapCategorizer.CategoryDescriptor[BathroomMaps.CATEGORIES.size()]);
+                for (int i = 0; i < BathroomMaps.CATEGORIES.size(); i++) {
+                    categoryDescriptors[i] = new GoogleMapCategorizer.CategoryDescriptor<String>()
+                            .setId(BathroomMaps.CATEGORIES.get(i));
+                }
+                mMap = new GoogleMapCategorizer<>(googleMap, categoryDescriptors);
 
                 try {
                     mMap.getMap().setMyLocationEnabled(true);
@@ -255,7 +256,26 @@ public class BathroomMapFragment extends SupportMapFragment {
     }
 
     public void showCategory(String category, boolean show) {
-        mMap.showCategory(category, show);
+        Set<Marker> markers = mMap.showCategory(category, show);
+
+        // Now perform second-order filtering: average rating
+        for (Iterator<Marker> iterator = markers.iterator(); iterator.hasNext();) {
+            ensureMarkerHiddenOnBelowMinimumRating(iterator.next());
+        }
+    }
+
+    public float getMinimumRatingFilter() {
+        return mMinimumRatingFilter;
+    }
+
+    public void setMinimumRatingFilter(float rating) {
+        // This method itself doesn't re-iterate over the markers to ensure the right ones are visible.
+        // It relies on calls to showCategory to do the re-iteration.
+        // So, in order for this all to work correctly, showCategory needs to be called on all of the
+        // categories after setMinimumRatingFilter is called.
+        // This is a reasonable assumption given that all of the necessary information comes from
+        // the CategoryFilterFragment.
+        mMinimumRatingFilter = rating;
     }
 
     private void fetchBathrooms(double latitude, double longitude, int distance) {
@@ -280,6 +300,15 @@ public class BathroomMapFragment extends SupportMapFragment {
                     .position(Util.createBathroomLatLng(bathroom))
                     .icon(BitmapDescriptorFactory.fromResource(R.drawable.ic_poo));
             mSelectedMarker = mMap.addMarker(markerOptions, null);
+        }
+    }
+
+    private void ensureMarkerHiddenOnBelowMinimumRating(Marker marker) {
+        if (marker.isVisible()) {
+            Bathroom bathroom = mMarkerMap.get(marker.getId());
+            if (bathroom.getAverageRating() < mMinimumRatingFilter) {
+                marker.setVisible(false);
+            }
         }
     }
 
@@ -335,6 +364,7 @@ public class BathroomMapFragment extends SupportMapFragment {
                         Marker marker = mMap.addMarker(markerOptions, bathroom.getCategory());
                         mMarkerMap.put(marker.getId(), bathroom);
                         mBathroomsOnMap.put(bathroom.getId(), bathroom);
+                        ensureMarkerHiddenOnBelowMinimumRating(marker);
                     } else {
                         Log.v(TAG, "Bathroom '" + bathroom.getName() + "' already on map");
                     }

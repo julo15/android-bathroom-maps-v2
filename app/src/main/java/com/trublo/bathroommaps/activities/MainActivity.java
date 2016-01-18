@@ -26,8 +26,6 @@ import com.trublo.bathroommaps.googlemaps.GoogleMaps;
 
 import java.util.Iterator;
 import java.util.List;
-import java.util.ListIterator;
-import java.util.Map;
 
 public class MainActivity extends SingleFragmentActivity implements BathroomMapFragment.Callbacks {
     private static final String TAG = "MainActivity";
@@ -76,7 +74,9 @@ public class MainActivity extends SingleFragmentActivity implements BathroomMapF
         mFilterButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Intent intent = CategoryFilterActivity.newIntent(MainActivity.this, getMapFragment().getCategories());
+                Intent intent = CategoryFilterActivity.newIntent(MainActivity.this,
+                        getMapFragment().getCategories(),
+                        getMapFragment().getMinimumRatingFilter());
                 startActivityForResult(intent, REQUEST_FILTER_CATEGORIES);
             }
         });
@@ -169,6 +169,12 @@ public class MainActivity extends SingleFragmentActivity implements BathroomMapF
             updateToolbar(mSelectedBathroom, false);
         } else if (requestCode == REQUEST_FILTER_CATEGORIES) {
             BathroomMapFragment bathroomMapFragment = getMapFragment();
+
+            // First update the minimum rating
+            bathroomMapFragment.setMinimumRatingFilter(data.getFloatExtra(CategoryFilterFragment.EXTRA_MINIMUM_RATING,
+                    bathroomMapFragment.getMinimumRatingFilter()));
+
+            // Now trigger all the marker visibility updates via showCategory calls
             List<Parcelable> parcelables = data.getParcelableArrayListExtra(CategoryFilterFragment.EXTRA_CATEGORY_FILTER_ITEMS);
             List<CategoryFilterFragment.CategoryFilterItem> categoryFilterItems = Util.cast(parcelables);
             for (Iterator<CategoryFilterFragment.CategoryFilterItem> iterator = categoryFilterItems.iterator(); iterator.hasNext();) {

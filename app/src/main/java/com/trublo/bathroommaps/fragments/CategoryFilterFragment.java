@@ -2,6 +2,7 @@ package com.trublo.bathroommaps.fragments;
 
 import android.app.Activity;
 import android.content.Intent;
+import android.graphics.Color;
 import android.os.Bundle;
 import android.os.Parcel;
 import android.os.Parcelable;
@@ -9,13 +10,21 @@ import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
+import android.text.Editable;
+import android.text.TextWatcher;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.CompoundButton;
+import android.widget.EditText;
+import android.widget.FrameLayout;
+import android.widget.ImageView;
+import android.widget.SeekBar;
 import android.widget.TextView;
+import android.widget.Toast;
 import android.widget.ToggleButton;
 
+import com.trublo.bathroommaps.GoogleMapCategorizer;
 import com.trublo.bathroommaps.R;
 import com.trublo.bathroommaps.Util;
 
@@ -28,13 +37,33 @@ import java.util.Iterator;
 public class CategoryFilterFragment extends Fragment {
 
     private static final String ARG_CATEGORY_FILTER_ITEMS = "category_filter_items";
+    private static final String ARG_MINIMUM_RATING = "minimum_rating";
     public static final String EXTRA_CATEGORY_FILTER_ITEMS = "com.trublo.bathroommaps.category_filter_items";
+    public static final String EXTRA_MINIMUM_RATING = "com.trublo.bathroommaps.minimum_rating";
+
+    private static class RatingFilterNotchDescriptor {
+        public int textResId;
+        public float rating;
+
+        public RatingFilterNotchDescriptor(int t, float r) {
+            textResId = t;
+            rating = r;
+        }
+    }
+    private static final RatingFilterNotchDescriptor[] RATING_FILTER_NOTCHES = new RatingFilterNotchDescriptor[] {
+            new RatingFilterNotchDescriptor(R.string.rating_filter_notch_all, 0),
+            new RatingFilterNotchDescriptor(R.string.rating_filter_notch_2, 2f),
+            new RatingFilterNotchDescriptor(R.string.rating_filter_notch_3, 3f),
+            new RatingFilterNotchDescriptor(R.string.rating_filter_notch_4, 4f),
+    };
 
     private RecyclerView mRecyclerView;
+    private SeekBar mRatingSeekBar;
 
     public static class CategoryFilterItem implements Parcelable {
         private String mCategoryId;
         private boolean mIsVisible;
+        private GoogleMapCategorizer.ParcelableBitmapDescriptor mIconDescriptor;
 
         public static final Parcelable.Creator<CategoryFilterItem> CREATOR = new Parcelable.Creator<CategoryFilterItem>() {
             @Override
@@ -45,6 +74,7 @@ public class CategoryFilterFragment extends Fragment {
                 boolean[] visible = new boolean[1];
                 source.readBooleanArray(visible);
                 item.mIsVisible = visible[0];
+                item.mIconDescriptor = source.readParcelable(GoogleMapCategorizer.ParcelableBitmapDescriptor.class.getClassLoader());
 
                 return item;
             }
@@ -65,6 +95,7 @@ public class CategoryFilterFragment extends Fragment {
             dest.writeString(mCategoryId);
             boolean[] visible = new boolean[] { mIsVisible };
             dest.writeBooleanArray(visible);
+            dest.writeParcelable(mIconDescriptor, 0);
         }
 
         public String getCategoryId() {
@@ -82,11 +113,20 @@ public class CategoryFilterFragment extends Fragment {
         public void setIsVisible(boolean isVisible) {
             mIsVisible = isVisible;
         }
+
+        public GoogleMapCategorizer.ParcelableBitmapDescriptor getIconDescriptor() {
+            return mIconDescriptor;
+        }
+
+        public void setIconDescriptor(GoogleMapCategorizer.ParcelableBitmapDescriptor iconDescriptor) {
+            mIconDescriptor = iconDescriptor;
+        }
     }
 
-    public static CategoryFilterFragment newInstance(ArrayList<CategoryFilterItem> categoryFilterItems) {
+    public static CategoryFilterFragment newInstance(ArrayList<CategoryFilterItem> categoryFilterItems, float minimumRating) {
         Bundle args = new Bundle();
         args.putParcelableArrayList(ARG_CATEGORY_FILTER_ITEMS, categoryFilterItems);
+        args.putFloat(ARG_MINIMUM_RATING, minimumRating);
 
         CategoryFilterFragment fragment = new CategoryFilterFragment();
         fragment.setArguments(args);
@@ -116,6 +156,45 @@ public class CategoryFilterFragment extends Fragment {
 
         setupAdapter(categoryFilterItems);
 
+        mRatingSeekBar = Util.findView(view, R.id.fragment_category_filter_rating_seek_bar);
+        mRatingSeekBar.setMax(RATING_FILTER_NOTCHES.length - 1);
+        mRatingSeekBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+            Toast mToast;
+
+            @Override
+            public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
+                if (!fromUser) {
+                    return;
+                }
+
+                if (mToast != null) {
+                    mToast.cancel();
+                }
+                mToast = Toast.makeText(getActivity(), RATING_FILTER_NOTCHES[progress].textResId, Toast.LENGTH_SHORT);
+                mToast.show();
+                sendResult();
+            }
+
+            @Override
+            public void onStartTrackingTouch(SeekBar seekBar) {
+
+            }
+
+            @Override
+            public void onStopTrackingTouch(SeekBar seekBar) {
+
+            }
+        });
+
+        float minimumRating = getArguments().getFloat(ARG_MINIMUM_RATING);
+        for (int i = 0; i < RATING_FILTER_NOTCHES.length; i++) {
+            RatingFilterNotchDescriptor descriptor = RATING_FILTER_NOTCHES[i];
+            if (descriptor.rating == minimumRating) {
+                mRatingSeekBar.setProgress(i);
+                break;
+            }
+        }
+
         return view;
     }
 
@@ -129,6 +208,7 @@ public class CategoryFilterFragment extends Fragment {
         int resultCode = Activity.RESULT_OK;
         Intent data = new Intent();
         data.putExtra(EXTRA_CATEGORY_FILTER_ITEMS, adapter.mCategories);
+        data.putExtra(EXTRA_MINIMUM_RATING, RATING_FILTER_NOTCHES[mRatingSeekBar.getProgress()].rating);
 
         Fragment targetFragment = getTargetFragment();
         if (targetFragment != null) {
@@ -142,6 +222,7 @@ public class CategoryFilterFragment extends Fragment {
         private CategoryFilterItem mCategory;
         private TextView mTextView;
         private ToggleButton mToggleButton;
+        private FrameLayout mIconImageView;
 
         public CategoryHolder(View itemView) {
             super(itemView);
@@ -157,12 +238,20 @@ public class CategoryFilterFragment extends Fragment {
                     sendResult();
                 }
             });
+            mIconImageView = Util.findView(itemView, R.id.category_item_icon_image_view);
         }
 
         public void bindCategory(CategoryFilterItem category) {
             mCategory = category;
             mTextView.setText(category.getCategoryId());
             mToggleButton.setChecked(category.isVisible());
+
+            GoogleMapCategorizer.ParcelableBitmapDescriptor iconDescriptor = category.getIconDescriptor();
+            mIconImageView.setBackgroundColor(Color.TRANSPARENT);
+            if (iconDescriptor instanceof GoogleMapCategorizer.HueBitmapDescriptor) {
+                GoogleMapCategorizer.HueBitmapDescriptor hueBitmapDescriptor = Util.cast(iconDescriptor);
+                mIconImageView.setBackgroundColor(Color.HSVToColor(new float[] { hueBitmapDescriptor.getHue(), 1f, 1f }));
+            }
         }
     }
 

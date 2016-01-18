@@ -1,5 +1,8 @@
 package com.trublo.bathroommaps;
 
+import android.os.Parcel;
+import android.os.Parcelable;
+import android.support.annotation.DrawableRes;
 import android.util.Log;
 
 import com.google.android.gms.maps.GoogleMap;
@@ -12,7 +15,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 
 /**
@@ -21,12 +23,14 @@ import java.util.Set;
 public class GoogleMapCategorizer<T> {
     private static final String TAG = GoogleMapCategorizer.class.getSimpleName();
 
-    private static final BitmapDescriptor[] DEFAULT_CATEGORY_ICONS = new BitmapDescriptor[] {
-            BitmapDescriptorFactory.defaultMarker(),
-            BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_AZURE),
-            BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_BLUE),
-            BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_CYAN),
-            BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_GREEN),
+    private static final ParcelableBitmapDescriptor[] DEFAULT_CATEGORY_ICON_DESCRIPTORS = new ParcelableBitmapDescriptor[] {
+            ParcelableBitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_AZURE),
+            ParcelableBitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_CYAN),
+            ParcelableBitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_GREEN),
+            ParcelableBitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_ORANGE),
+            ParcelableBitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_MAGENTA),
+            ParcelableBitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_RED),
+            ParcelableBitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_YELLOW),
     };
 
     private GoogleMap mMap;
@@ -37,7 +41,7 @@ public class GoogleMapCategorizer<T> {
 
     public static class CategoryDescriptor<T> {
         T mId;
-        BitmapDescriptor mIcon;
+        ParcelableBitmapDescriptor mIconDescriptor;
 
         public T getId() {
             return mId;
@@ -48,20 +52,16 @@ public class GoogleMapCategorizer<T> {
             return this;
         }
 
-        public BitmapDescriptor getIcon() {
-            return mIcon;
-        }
-
-        public CategoryDescriptor<T> setIcon(BitmapDescriptor icon) {
-            mIcon = icon;
-            return this;
+        public ParcelableBitmapDescriptor getIconDescriptor() {
+            return mIconDescriptor;
         }
     }
 
     public static class CategoryInfo<T> {
         T mId;
         Set<Marker> mMarkers = new HashSet<>();
-        BitmapDescriptor mIcon;
+        ParcelableBitmapDescriptor mIconDescriptor;
+        BitmapDescriptor mCachedIcon; // cached
         boolean mIsVisible = true;
 
         private CategoryInfo(T id) {
@@ -76,12 +76,17 @@ public class GoogleMapCategorizer<T> {
             return mMarkers;
         }
 
-        public BitmapDescriptor getIcon() {
-            return mIcon;
+        public ParcelableBitmapDescriptor getIconDescriptor() {
+            return mIconDescriptor;
         }
 
-        private void setIcon(BitmapDescriptor icon) {
-            mIcon = icon;
+        public void setIconDescriptor(ParcelableBitmapDescriptor iconDescriptor) {
+            mIconDescriptor = iconDescriptor;
+            mCachedIcon = (iconDescriptor != null) ? iconDescriptor.get() : null;
+        }
+
+        public BitmapDescriptor getCachedIcon() {
+            return mCachedIcon;
         }
 
         public boolean isVisible() {
@@ -90,6 +95,96 @@ public class GoogleMapCategorizer<T> {
 
         private void setIsVisible(boolean isVisible) {
             mIsVisible = isVisible;
+        }
+    }
+
+    public static abstract class ParcelableBitmapDescriptor implements Parcelable {
+        public abstract BitmapDescriptor get();
+    }
+
+    public static class HueBitmapDescriptor extends ParcelableBitmapDescriptor {
+        private float mHue;
+
+        public static final Parcelable.Creator<HueBitmapDescriptor> CREATOR = new Parcelable.Creator<HueBitmapDescriptor>() {
+            @Override
+            public HueBitmapDescriptor createFromParcel(Parcel source) {
+                HueBitmapDescriptor descriptor = new HueBitmapDescriptor(source.readFloat());
+                return descriptor;
+            }
+
+            @Override
+            public HueBitmapDescriptor[] newArray(int size) {
+                return new HueBitmapDescriptor[size];
+            }
+        };
+
+        private HueBitmapDescriptor(float hue) {
+            mHue = hue;
+        }
+
+        public float getHue() {
+            return mHue;
+        }
+
+        @Override
+        public BitmapDescriptor get() {
+            return BitmapDescriptorFactory.defaultMarker(mHue);
+        }
+
+        @Override
+        public int describeContents() {
+            return 0;
+        }
+
+        @Override
+        public void writeToParcel(Parcel dest, int flags) {
+            dest.writeFloat(mHue);
+        }
+    }
+
+    public static class IconResourceBitmapDescriptor extends ParcelableBitmapDescriptor {
+        private int mResId;
+
+        public static final Parcelable.Creator<IconResourceBitmapDescriptor> CREATOR = new Parcelable.Creator<IconResourceBitmapDescriptor>() {
+            @Override
+            public IconResourceBitmapDescriptor createFromParcel(Parcel source) {
+                IconResourceBitmapDescriptor descriptor = new IconResourceBitmapDescriptor(source.readInt());
+                return descriptor;
+            }
+
+            @Override
+            public IconResourceBitmapDescriptor[] newArray(int size) {
+                return new IconResourceBitmapDescriptor[size];
+            }
+        };
+
+        @Override
+        public int describeContents() {
+            return 0;
+        }
+
+        @Override
+        public void writeToParcel(Parcel dest, int flags) {
+            dest.writeInt(mResId);
+        }
+
+        @Override
+        public BitmapDescriptor get() {
+            return BitmapDescriptorFactory.fromResource(mResId);
+        }
+
+        private IconResourceBitmapDescriptor(@DrawableRes int resId) {
+            mResId = resId;
+        }
+    }
+
+    public static class ParcelableBitmapDescriptorFactory {
+        public static ParcelableBitmapDescriptor defaultMarker(float hue) {
+            return new HueBitmapDescriptor(hue);
+        }
+
+        public static ParcelableBitmapDescriptor fromResource(@DrawableRes int resId) {
+            return new IconResourceBitmapDescriptor(resId);
         }
     }
 
@@ -103,7 +198,11 @@ public class GoogleMapCategorizer<T> {
         if (categoryDescriptors != null) {
             for (CategoryDescriptor<T> descriptor : categoryDescriptors) {
                 CategoryInfo<T> categoryInfo = new CategoryInfo<>(descriptor.getId());
-                categoryInfo.setIcon(descriptor.getIcon());
+
+                // Ensure the category has an icon. We do this to handle the case where you load up
+                // the app and press the category filter button before we actually fetch the bathrooms.
+                categoryInfo.setIconDescriptor(descriptor.getIconDescriptor() != null ?
+                    descriptor.getIconDescriptor() : retrieveIconDescriptorForNewCategory(descriptor.getId()));
                 addCategory(categoryInfo);
             }
         }
@@ -130,10 +229,10 @@ public class GoogleMapCategorizer<T> {
         // Set the marker icon
         if (options.getIcon() == null) {
             // Ensure the category has an icon, then set it on the marker
-            if (categoryInfo.getIcon() == null) {
-                categoryInfo.setIcon(retrieveIconForNewCategory(category));
+            if (categoryInfo.getIconDescriptor() == null) {
+                categoryInfo.setIconDescriptor(retrieveIconDescriptorForNewCategory(category));
             }
-            options.icon(categoryInfo.getIcon());
+            options.icon(categoryInfo.getCachedIcon());
         } else {
             Log.i(TAG, "Icon already set on new marker. Will use that icon instead of category icon.");
         }
@@ -171,26 +270,25 @@ public class GoogleMapCategorizer<T> {
         return mCategoryInfoList;
     }
 
-    public void showCategory(T category, boolean show) {
+    public Set<Marker> showCategory(T category, boolean show) {
+
         CategoryInfo<T> categoryInfo = mCategoryInfoMap.get(category);
         if (categoryInfo == null) {
             Log.w(TAG, "Could not find categoryinfo for category " + category.toString());
-            return;
+            return null;
         }
 
-        boolean visible = categoryInfo.isVisible();
-        if (visible != show) {
-            for (Marker marker : categoryInfo.getMarkers()) {
-                marker.setVisible(show);
-            }
-            categoryInfo.setIsVisible(show);
+        for (Marker marker : categoryInfo.getMarkers()) {
+            marker.setVisible(show);
         }
+        categoryInfo.setIsVisible(show);
+        return categoryInfo.getMarkers();
     }
 
-    private BitmapDescriptor retrieveIconForNewCategory(T category) {
-        if (mNextIconIndex == DEFAULT_CATEGORY_ICONS.length) {
+    private ParcelableBitmapDescriptor retrieveIconDescriptorForNewCategory(T category) {
+        if (mNextIconIndex == DEFAULT_CATEGORY_ICON_DESCRIPTORS.length) {
             throw new IllegalStateException("Ran out of unique icons for map categories");
         }
-        return DEFAULT_CATEGORY_ICONS[mNextIconIndex++];
+        return DEFAULT_CATEGORY_ICON_DESCRIPTORS[mNextIconIndex++];
     }
 }

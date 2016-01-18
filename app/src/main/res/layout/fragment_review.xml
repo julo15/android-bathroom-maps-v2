@@ -10,12 +10,15 @@
         android:id="@+id/fragment_review_email_edit_text"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:layout_marginBottom="@dimen/spacing_normal"
+        style="@style/ReviewEditTextBase"
         android:hint="@string/review_email_hint" />
 
     <RatingBar
         android:id="@+id/fragment_review_rating_bar"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:layout_marginBottom="@dimen/spacing_normal"
         style="?android:attr/ratingBarStyle"
         android:numStars="5"
         android:stepSize="1" />
@@ -24,7 +27,11 @@
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_weight="1"
-        android:hint="@string/review_text_hint" />
+        android:layout_marginBottom="@dimen/spacing_normal"
+        android:gravity="top|left"
+        android:scrollbars="vertical"
+        android:hint="@string/review_text_hint"
+        style="@style/ReviewEditTextBase" />
 
     <Button
         android:id="@+id/fragment_review_send_review_button"

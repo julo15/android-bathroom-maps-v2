@@ -2,6 +2,7 @@ package com.trublo.bathroommaps.bathroommaps;
 
 import android.net.Uri;
 
+import com.google.common.collect.ImmutableList;
 import com.squareup.okhttp.OkHttpClient;
 import com.squareup.okhttp.Request;
 import com.squareup.okhttp.Response;
@@ -26,6 +27,17 @@ public class BathroomMaps {
     private static final Uri ENDPOINT = Uri.parse("http://ec2-54-200-75-151.us-west-2.compute.amazonaws.com:8080");
 
     private static final int SERVER_RESPONSE_OK = 1;
+
+    public static final ImmutableList<String> CATEGORIES = new ImmutableList.Builder<String>()
+            .add("Public")
+            .add("Coffee Shop")
+            .add("Book Store")
+            .add("Hotel")
+            .add("Fast Food")
+            .add("Other")
+            .build();
+    private static final int OTHER_CATEGORY_INDEX = 5; // If we receive any bathroom with a category not in our list,
+                                                         // we'll make it show up in the Other category.
 
     private OkHttpClient mHttpClient = new OkHttpClient();
 
@@ -63,7 +75,7 @@ public class BathroomMaps {
     private Bathroom parseBathroom(JSONObject bathroomJsonObject) throws JSONException {
         Bathroom bathroom = new Bathroom();
         bathroom.setId(bathroomJsonObject.getString("_id"));
-        bathroom.setCategory(bathroomJsonObject.getString("category"));
+        bathroom.setCategory(sanitizeCategoryName(bathroomJsonObject.getString("category")));
         bathroom.setName(bathroomJsonObject.getString("name"));
         bathroom.setIsPending(bathroomJsonObject.getBoolean("pending"));
         bathroom.setLatitude(bathroomJsonObject.getDouble("lat"));
@@ -90,7 +102,6 @@ public class BathroomMaps {
         Review review = new Review();
         review.setRating(reviewJsonObject.getInt("rating"));
         review.setText(reviewJsonObject.getString("text"));
-        //review.setDateCreated(ISODateTimeFormat.dateTimeParser().parseDateTime(reviewJsonObject.getString("date")));
 
         String dateText = reviewJsonObject.getString("date");
         DateTimeFormatter formatter = ISODateTimeFormat.dateTime();
@@ -120,6 +131,16 @@ public class BathroomMaps {
         throwIfResponseFailed(responseJsonObject);
 
         return parseBathroom(responseJsonObject.getJSONObject("bathroom"));
+    }
+
+    private String sanitizeCategoryName(String categoryFromSomewhere) {
+        // We ensure the casing is correct, and that all unknown categories get put into "Other".
+        for (String category : CATEGORIES) {
+            if (category.equalsIgnoreCase(categoryFromSomewhere)) {
+                return category;
+            }
+        }
+        return CATEGORIES.get(OTHER_CATEGORY_INDEX);
     }
 
     private void throwIfResponseFailed(JSONObject responseJsonObject) throws IOException, JSONException {

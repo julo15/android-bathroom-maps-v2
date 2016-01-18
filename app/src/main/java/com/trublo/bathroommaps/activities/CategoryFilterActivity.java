@@ -18,8 +18,9 @@ import java.util.List;
 public class CategoryFilterActivity extends SingleFragmentActivity {
 
     private static final String EXTRA_CATEGORY_FILTER_ITEMS = "com.trublo.bathroommaps.category_filter_items";
+    private static final String EXTRA_MINIMUM_RATING = "com.trublo.bathroommaps.minimum_rating";
 
-    public static Intent newIntent(Context context, List<GoogleMapCategorizer.CategoryInfo<String>> categories) {
+    public static Intent newIntent(Context context, List<GoogleMapCategorizer.CategoryInfo<String>> categories, float minimumRating) {
         Intent intent = new Intent(context, CategoryFilterActivity.class);
 
         int size = categories.size();
@@ -28,10 +29,11 @@ public class CategoryFilterActivity extends SingleFragmentActivity {
             CategoryFilterFragment.CategoryFilterItem item = new CategoryFilterFragment.CategoryFilterItem();
             item.setCategoryId(categoryInfo.getId());
             item.setIsVisible(categoryInfo.isVisible());
+            item.setIconDescriptor(categoryInfo.getIconDescriptor());
             items.add(item);
         }
-
         intent.putExtra(EXTRA_CATEGORY_FILTER_ITEMS, items);
+        intent.putExtra(EXTRA_MINIMUM_RATING, minimumRating);
         return intent;
     }
 
@@ -41,6 +43,6 @@ public class CategoryFilterActivity extends SingleFragmentActivity {
                 .getParcelableArrayListExtra(EXTRA_CATEGORY_FILTER_ITEMS);
         ArrayList<CategoryFilterFragment.CategoryFilterItem> categoryFilterItems = Util.cast(parcelables);
 
-        return CategoryFilterFragment.newInstance(categoryFilterItems);
+        return CategoryFilterFragment.newInstance(categoryFilterItems, getIntent().getFloatExtra(EXTRA_MINIMUM_RATING, 0));
     }
 }
