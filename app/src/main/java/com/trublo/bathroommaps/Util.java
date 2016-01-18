@@ -1,6 +1,8 @@
 package com.trublo.bathroommaps;
 
 import android.app.Activity;
+import android.graphics.Color;
+import android.support.annotation.ColorInt;
 import android.view.View;
 
 import com.google.android.gms.maps.model.LatLng;
@@ -52,5 +54,9 @@ public class Util {
                 break;
             }
         }
+    }
+
+    public static @ColorInt int bathroomHueToColor(float hue) {
+        return Color.HSVToColor(new float[]{hue, 1f, 1f});
     }
 }
