@@ -31,6 +31,7 @@
         android:gravity="top|left"
         android:scrollbars="vertical"
         android:hint="@string/review_text_hint"
+        android:singleLine="true"
         style="@style/ReviewEditTextBase" />
 
     <Button

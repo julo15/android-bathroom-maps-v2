@@ -12,6 +12,7 @@ import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.widget.ImageView;
 import android.widget.ProgressBar;
 import android.widget.RatingBar;
 import android.widget.TextView;
@@ -39,10 +40,11 @@ public class MainActivity extends SingleFragmentActivity implements BathroomMapF
     private View mProgressView;
     private View mLocateButton;
     private View mFilterButton;
+    private View mAddButton;
     private View mToolbarRootView;
     private TextView mToolbarNameTextView;
     private TextView mToolbarTimeTextView;
-    private View mToolbarCategoryIconView;
+    private ImageView mToolbarCategoryIconView;
     private TextView mToolbarCategoryNameTextView;
     private ProgressBar mToolbarTimeProgressBar;
     private View mToolbarDirectionsButton;
@@ -70,7 +72,7 @@ public class MainActivity extends SingleFragmentActivity implements BathroomMapF
         mLocateButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                getMapFragment().centerMap();
+                getMapFragment().centerMap(true /* animate */);
             }
         });
 
@@ -82,6 +84,15 @@ public class MainActivity extends SingleFragmentActivity implements BathroomMapF
                         getMapFragment().getCategories(),
                         getMapFragment().getMinimumRatingFilter());
                 startActivityForResult(intent, REQUEST_FILTER_CATEGORIES);
+            }
+        });
+
+        mAddButton = Util.findView(this, R.id.activity_main_add_button);
+        mAddButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Intent intent = AddBathroomActivity.newIntent(MainActivity.this);
+                startActivity(intent);
             }
         });
 
@@ -196,7 +207,7 @@ public class MainActivity extends SingleFragmentActivity implements BathroomMapF
     }
 
     @Override
-    public void onBathroomMarkerSelected(Bathroom bathroom) {
+    public boolean onBathroomMarkerSelected(Bathroom bathroom) {
         mSelectedBathroom = bathroom;
 
         if (bathroom != null) {
@@ -207,6 +218,7 @@ public class MainActivity extends SingleFragmentActivity implements BathroomMapF
         }
 
         Util.showView(mToolbarRootView, (bathroom != null));
+        return true;
     }
 
     private BathroomMapFragment getMapFragment() {
@@ -216,18 +228,14 @@ public class MainActivity extends SingleFragmentActivity implements BathroomMapF
     private void updateToolbar(Bathroom bathroom, boolean updateTime) {
         mToolbarNameTextView.setText(bathroom.getName());
 
-        int categoryColor = Color.TRANSPARENT;
+        GoogleMapCategorizer.ParcelableBitmapDescriptor iconDescriptor = null;
         for (GoogleMapCategorizer.CategoryInfo<String> categoryInfo : getMapFragment().getCategories()) {
             if (categoryInfo.getId().equals(bathroom.getCategory())) {
-                if (categoryInfo.getIconDescriptor() instanceof GoogleMapCategorizer.HueBitmapDescriptor) {
-                    GoogleMapCategorizer.HueBitmapDescriptor hueBitmapDescriptor = Util.cast(categoryInfo.getIconDescriptor());
-                    categoryColor = Util.bathroomHueToColor(hueBitmapDescriptor.getHue());
-                }
+                iconDescriptor = categoryInfo.getIconDescriptor();
                 break;
             }
         }
-        Util.showView(mToolbarCategoryIconView, categoryColor != Color.TRANSPARENT);
-        mToolbarCategoryIconView.setBackgroundColor(categoryColor);
+        Util.setBathroomIcon(mToolbarCategoryIconView, iconDescriptor);
 
         mToolbarCategoryNameTextView.setText(bathroom.getCategory());
 

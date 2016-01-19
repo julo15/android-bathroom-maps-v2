@@ -2,7 +2,6 @@ package com.trublo.bathroommaps.fragments;
 
 import android.app.Activity;
 import android.content.Intent;
-import android.graphics.Color;
 import android.os.Bundle;
 import android.os.Parcel;
 import android.os.Parcelable;
@@ -14,7 +13,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.CompoundButton;
-import android.widget.FrameLayout;
+import android.widget.ImageView;
 import android.widget.SeekBar;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -218,7 +217,7 @@ public class CategoryFilterFragment extends Fragment {
         private CategoryFilterItem mCategory;
         private TextView mTextView;
         private ToggleButton mToggleButton;
-        private FrameLayout mIconImageView;
+        private ImageView mIconImageView;
 
         public CategoryHolder(View itemView) {
             super(itemView);
@@ -243,11 +242,7 @@ public class CategoryFilterFragment extends Fragment {
             mToggleButton.setChecked(category.isVisible());
 
             GoogleMapCategorizer.ParcelableBitmapDescriptor iconDescriptor = category.getIconDescriptor();
-            mIconImageView.setBackgroundColor(Color.TRANSPARENT);
-            if (iconDescriptor instanceof GoogleMapCategorizer.HueBitmapDescriptor) {
-                GoogleMapCategorizer.HueBitmapDescriptor hueBitmapDescriptor = Util.cast(iconDescriptor);
-                mIconImageView.setBackgroundColor(Util.bathroomHueToColor(hueBitmapDescriptor.getHue()));
-            }
+            Util.setBathroomIcon(mIconImageView, iconDescriptor);
         }
     }
 
@@ -261,7 +256,7 @@ public class CategoryFilterFragment extends Fragment {
 
         @Override
         public CategoryHolder onCreateViewHolder(ViewGroup parent, int viewType) {
-            View view = LayoutInflater.from(getActivity()).inflate(R.layout.category_item, parent, false);
+            View view = LayoutInflater.from(getActivity()).inflate(R.layout.category_filter_item, parent, false);
             return new CategoryHolder(view);
         }
 

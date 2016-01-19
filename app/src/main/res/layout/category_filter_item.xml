@@ -4,12 +4,12 @@
               android:layout_width="match_parent"
               android:layout_height="match_parent">
 
-    <FrameLayout
+    <ImageView
         android:id="@+id/category_item_icon_image_view"
         android:layout_width="@dimen/category_icon"
         android:layout_height="@dimen/category_icon"
         android:layout_margin="@dimen/spacing_normal"
-        tools:background="#00DD00"/>
+        tools:src="@drawable/ic_poo_40x40_blue" />
 
     <TextView
         android:id="@+id/category_item_text_view"

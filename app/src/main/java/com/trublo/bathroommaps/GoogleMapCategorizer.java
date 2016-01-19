@@ -52,6 +52,11 @@ public class GoogleMapCategorizer<T> {
             return this;
         }
 
+        public CategoryDescriptor<T> setIconResource(@DrawableRes int id) {
+            mIconDescriptor = ParcelableBitmapDescriptorFactory.fromResource(id);
+            return this;
+        }
+
         public ParcelableBitmapDescriptor getIconDescriptor() {
             return mIconDescriptor;
         }
@@ -166,6 +171,10 @@ public class GoogleMapCategorizer<T> {
         @Override
         public void writeToParcel(Parcel dest, int flags) {
             dest.writeInt(mResId);
+        }
+
+        public int getResId() {
+            return mResId;
         }
 
         @Override
