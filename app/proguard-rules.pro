@@ -15,3 +15,10 @@
 #-keepclassmembers class fqcn.of.javascript.interface.for.webview {
 #   public *;
 #}
+
+# ProGuard will complain because of MultiDexing, then fail to build a signed APK
+# Here we (unfortunately) liberally hide warnings for all packages affected by MultiDexing.
+-dontwarn com.google.android.gms.**
+-dontwarn com.google.common.**
+-dontwarn okio.**
+-dontwarn org.joda.time.**
