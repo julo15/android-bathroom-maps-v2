@@ -6,6 +6,7 @@ import com.google.common.collect.ImmutableList;
 import com.squareup.okhttp.OkHttpClient;
 import com.squareup.okhttp.Request;
 import com.squareup.okhttp.Response;
+import com.trublo.bathroommaps.R;
 
 import org.joda.time.DateTime;
 import org.joda.time.format.DateTimeFormatter;
@@ -35,6 +36,15 @@ public class BathroomMaps {
             .add("Hotel")
             .add("Fast Food")
             .add("Other")
+            .build();
+    // Hack - the icons below correspond to the categories above. These should be in a common object instead.
+    public static final ImmutableList<Integer> CATEGORY_ICONS = new ImmutableList.Builder<Integer>()
+            .add(R.drawable.ic_poo_40x40_blue)
+            .add(R.drawable.ic_poo_40x40_yellow)
+            .add(R.drawable.ic_poo_40x40_purple)
+            .add(R.drawable.ic_poo_40x40_teal)
+            .add(R.drawable.ic_poo_40x40_orange)
+            .add(R.drawable.ic_poo_40x40_red)
             .build();
     private static final int OTHER_CATEGORY_INDEX = 5; // If we receive any bathroom with a category not in our list,
                                                          // we'll make it show up in the Other category.
@@ -131,6 +141,28 @@ public class BathroomMaps {
         throwIfResponseFailed(responseJsonObject);
 
         return parseBathroom(responseJsonObject.getJSONObject("bathroom"));
+    }
+
+    public void submitBathroom(String name, String category, double latitude, double longitude) throws IOException, JSONException {
+        String url = ENDPOINT
+                .buildUpon()
+                .appendPath("addbathroom")
+                .appendQueryParameter("name", name)
+                .appendQueryParameter("lat", String.valueOf(latitude))
+                .appendQueryParameter("lon", String.valueOf(longitude))
+                .appendQueryParameter("cat", category)
+                .build()
+                .toString();
+        Request request = new Request.Builder()
+                .url(url)
+                .build();
+        Response response = mHttpClient.newCall(request).execute();
+        if (!response.isSuccessful()) {
+            throw new IOException("HTTP failure response in submitBathroom: " + response.code());
+        }
+
+        JSONObject responseJsonObject = new JSONObject(response.body().string());
+        throwIfResponseFailed(responseJsonObject);
     }
 
     private String sanitizeCategoryName(String categoryFromSomewhere) {

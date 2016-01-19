@@ -19,6 +19,13 @@
     <string name="rating_filter_notch_3">>3</string>
     <string name="rating_filter_notch_4">>4</string>
     <string name="rating_filter_label">Minimum rating:</string>
+    <string name="add_bathroom_button">Add bathroom</string>
+    <string name="add_bathroom_prompt_title">Want to tell us about a bathroom we don\'t know about? Great!</string>
+    <string name="add_bathroom_prompt">Just center the map onto where the bathroom is, enter a name and category, then press \'Add bathroom\'.</string>
+    <string name="add_bathroom_name_prompt">Bathroom name</string>
+    <string name="add_bathroom_succeeded">Thanks for your submission! We\'ll review it before adding it to our database.</string>
+    <string name="add_bathroom_failed">We could not add the bathroom for some reason. (Are you connected to the internet?)</string>
+    <string name="add_bathroom_empty_name">Enter a bathroom name!</string>
 
     <plurals name="review_count">
         <item quantity="one">%d review</item>

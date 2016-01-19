@@ -9,6 +9,7 @@ import android.widget.Toast;
 
 import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.location.LocationServices;
+import com.google.android.gms.maps.CameraUpdate;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
@@ -59,7 +60,7 @@ public class BathroomMapFragment extends SupportMapFragment {
 
     public interface Callbacks {
         void onFetchingBathrooms(boolean fetching);
-        void onBathroomMarkerSelected(Bathroom bathroom);
+        boolean onBathroomMarkerSelected(Bathroom bathroom); // return true to select and center map
     }
 
     @Override
@@ -85,7 +86,7 @@ public class BathroomMapFragment extends SupportMapFragment {
                         // Here we assume that the first time GoogleApiClient connects corresponds to the first time
                         // the fragment is shown. This should generally be correct.
                         if (!mPerformedInitialCentering) {
-                            centerMap();
+                            centerMap(false /* don't animate */);
                             mPerformedInitialCentering = true;
                         }
                     }
@@ -103,7 +104,8 @@ public class BathroomMapFragment extends SupportMapFragment {
                 GoogleMapCategorizer.CategoryDescriptor<String>[] categoryDescriptors = Util.cast(new GoogleMapCategorizer.CategoryDescriptor[BathroomMaps.CATEGORIES.size()]);
                 for (int i = 0; i < BathroomMaps.CATEGORIES.size(); i++) {
                     categoryDescriptors[i] = new GoogleMapCategorizer.CategoryDescriptor<String>()
-                            .setId(BathroomMaps.CATEGORIES.get(i));
+                            .setId(BathroomMaps.CATEGORIES.get(i))
+                            .setIconResource(BathroomMaps.CATEGORY_ICONS.get(i));
                 }
                 mMap = new GoogleMapCategorizer<>(googleMap, categoryDescriptors);
 
@@ -166,9 +168,11 @@ public class BathroomMapFragment extends SupportMapFragment {
                         }
 
                         Log.i(TAG, "Marker '" + marker.getTitle() + "' clicked");
-                        setSelectedBathroom(bathroom);
-                        centerMap(bathroom.getLatitude(), bathroom.getLongitude());
-                        getCallbacks().onBathroomMarkerSelected(bathroom);
+                        if (getCallbacks().onBathroomMarkerSelected(bathroom)) {
+                            setSelectedBathroom(bathroom);
+                            centerMap(bathroom.getLatitude(), bathroom.getLongitude(), true /* animate */);
+                        }
+
                         return true;
                     }
                 });
@@ -203,17 +207,21 @@ public class BathroomMapFragment extends SupportMapFragment {
         return LocationServices.FusedLocationApi.getLastLocation(mClient);
     }
 
-    public void centerMap() {
+    public LatLng getTargetLocation() {
+        return mMap.getMap().getCameraPosition().target;
+    }
+
+    public void centerMap(boolean animate) {
         Location location = getCurrentLocation();
         if (location == null) {
             Toast.makeText(getActivity(), R.string.current_location_unavailable, Toast.LENGTH_SHORT)
                     .show();
             return;
         }
-        centerMap(location.getLatitude(), location.getLongitude());
+        centerMap(location.getLatitude(), location.getLongitude(), animate);
     }
 
-    private void centerMap(double latitude, double longitude) {
+    private void centerMap(double latitude, double longitude, boolean animate) {
         // Centre the map on the coordinates given.
         // This method also makes a choice on whether the zoom of the camera should be adjusted.
         // If the zoom is far enough away from 'city' level, then the zoom is restored to CLICK_BATHROOM_ZOOM_LEVEL.
@@ -230,7 +238,12 @@ public class BathroomMapFragment extends SupportMapFragment {
             builder.zoom(currentCameraPosition.zoom);
         }
 
-        mMap.getMap().animateCamera(CameraUpdateFactory.newCameraPosition(builder.build()));
+        CameraUpdate update = CameraUpdateFactory.newCameraPosition(builder.build());
+        if (animate) {
+            mMap.getMap().animateCamera(update);
+        } else {
+            mMap.getMap().moveCamera(update);
+        }
     }
 
     @MainThread
@@ -298,7 +311,11 @@ public class BathroomMapFragment extends SupportMapFragment {
         if (bathroom != null) {
             MarkerOptions markerOptions = new MarkerOptions()
                     .position(Util.createBathroomLatLng(bathroom))
-                    .icon(BitmapDescriptorFactory.fromResource(R.drawable.ic_poo));
+                    .icon(BitmapDescriptorFactory.fromResource(R.drawable.ic_crosshair_2))
+
+                    // Hack - the anchor point depends on the icon resources passed in by the hosting
+                    // activity. Here we set the anchor to fit the current poo icons.
+                    .anchor(0.5f, 0.7f);
             mSelectedMarker = mMap.addMarker(markerOptions, null);
         }
     }

@@ -62,7 +62,7 @@
 
                 </FrameLayout>
 
-                <FrameLayout
+                <ImageView
                     android:id="@+id/bathroom_toolbar_category_icon"
                     android:layout_width="@dimen/category_icon_toolbar"
                     android:layout_height="@dimen/category_icon_toolbar"
@@ -136,7 +136,6 @@
         android:layout_alignParentEnd="true"
         android:src="@drawable/ic_filter_list_white_24dp" />
 
-
     <android.support.design.widget.FloatingActionButton
         android:id="@+id/activity_main_locate_button"
         android:clickable="true"
@@ -157,6 +156,7 @@
         android:layout_height="wrap_content"
         android:layout_margin="@dimen/padding_normal"
         android:layout_alignParentBottom="true"
+        android:src="@drawable/ic_add"
         app:backgroundTint="@color/color_background_white"/>
 
     </RelativeLayout>
